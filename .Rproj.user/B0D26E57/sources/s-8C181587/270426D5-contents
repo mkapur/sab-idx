@@ -1,8 +1,0 @@
-## scrape data from IPHC website
-require(dplyr)
-library(openxlsx)
-setwd()
-newFile <-"https://www.iphc.int/uploads/data/survey/2018/2018-publicdata-by-regarea-metric-set.xlsx"
-download.file(newFile,"./data/2018-publicdata-by-regarea-metric-set.xlsx",
-              method="wininet", #use "curl" for OS X / Linux, "wininet" for Windows
-              mode="wb") # "wb" means "write binary"
