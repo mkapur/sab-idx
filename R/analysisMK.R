@@ -13,11 +13,11 @@ cl <- makeCluster(no_cores)
 
 Version = "VAST_v5_3_0"
 
-load("./data/vast_data.rda")
-
-mapply(source, list.files(paste0(getwd(),"/R/"), pattern = ".R", full.names=TRUE))
-load("./data/sab_corrected.rda")
-load("./data/pcod_corrected.rda")
+# load("./data/vast_data.rda")
+## load christine's functions
+mapply(source, list.files(paste0(getwd(),"/R/spatiotemporalBSAIgrowth-master"), pattern = ".R", full.names=TRUE))
+# load("./data/sab_corrected.rda")
+# load("./data/pcod_corrected.rda")
 
 ## vector allocation issues when using full extent
 run_one_spp(

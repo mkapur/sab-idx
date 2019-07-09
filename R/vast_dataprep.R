@@ -1,9 +1,54 @@
 ## Load and sort raw data
 require(dplyr); require(reshape2)
+require(VAST)
 
-## WC ----
-load("./data/warehouse.RData") ## sent from melissa, no SAB after 2014
-# load("./data/manual_tri_combo.rda") ## extracted with nwfscSurvey
+iph0 <- read.csv("./data/manual_compile_2019-05-13.csv", na.strings = "#N/A")
+
+
+
+with(iph0,make_data(b_i = Sablefish_n3,
+                    a_i = 2,
+                    c_iz = )
+# load("./data/iph_2019-05-13.Rdata") 
+# Your observation data (often called Data_Geostat in Thorson’s examples) is a 
+## data frame that needs observations (e.g. CPUE), year, vessel
+# (if you want a catchability covariate),
+## area swept (e.g. 0.01, input from data), 
+## Latitude, Longitude, Stratum name, Survey name, 
+## and others (bottom depth if modelling 3D, time of day, 
+## other descriptors specific to your study)
+
+Data_Geostat <- iph0 %>% 
+  select(YEAR,  Latitude, Longitude, Stratum = Region, Catch_No = Sablefish_n3 ) %>%
+  mutate(Survey = 'IPHC',AreaSwept_km2 = 0.01)
+
+TmbData = VAST::make_data("Version" = Version,
+                          "FieldConfig" = FieldConfig,
+                          "OverdispersionConfig" = OverdispersionConfig,
+                          "RhoConfig" = RhoConfig,
+                          "ObsModel" = ObsModel,
+                          "c_iz" = rep(0,nrow(Data_Geostat)),
+                          "b_i" = Data_Geostat$Catch_No,
+                          "a_i" = Data_Geostat$AreaSwept_km2,
+                          "s_i" = Data_Geostat$knot_x - 1,
+                          "t_iz" = as.numeric(Data_Geostat$Year_Num),
+                          "a_xl" = Spatial_List$a_xl,
+                          "MeshList" = Spatial_List$MeshList, 
+                          "GridList" = Spatial_List$GridList,
+                          "Method" = Spatial_List$Method,
+                          "Options" = Options,
+                          "X_xtp" = X_xtp.x,
+                          “Aniso” = Aniso ) 
+
+iph0 %>% 
+  select(YEAR = YEAR,
+         Length..cm = NA,
+         Sex = NA,
+         START_LATITUDE = latitude,
+         START_LONGITUDE = longitude,
+         GEAR_DEPTH == Depth..F.,)
+
+save(iph, file = "./data/iph_2019-05-13.Rdata")
 
 wcsurv <- WareHouse.All.Ages.Env %>%
   filter(common_name == 'sablefish' &

@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1562689499971.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2629967680",
+    "id" : "EF144664",
+    "lastKnownWriteTime" : 1562690464,
+    "last_content_update" : 1562690464251,
+    "path" : "C:/Users/mkapur/Dropbox/UW/sab-idx/R/vast_dataprep.R",
+    "project_path" : "R/vast_dataprep.R",
+    "properties" : {
+        "cursorPosition" : "4,77",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
