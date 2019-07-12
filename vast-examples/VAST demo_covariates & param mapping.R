@@ -1,7 +1,7 @@
 ############################################################################################################################################################
 #
 ### Example for running VAST with inputs for spatially-explicit categorical and continuous covariates
-### Last updated: 7/8/2019 Dave McGowan, UW SAFS
+### Last updated: 7/10/2019 Dave McGowan, UW SAFS
 #
 ############################################################################################################################################################
 
@@ -14,11 +14,10 @@ library(ThorsonUtilities)
 ### Define Model structure
 ##########################
 rm(list=ls())
-setwd("C:/Users/McGowanD/Desktop/R examples/VAST inputs demo/")
 HomeDir <- getwd()
 
 ### Input my data - *** DEMO: capelin data from AFSC Gulf of Alaska bottom trawl survey for 2001-2017 (odd years only), with in situ bottom temperatures ***
-Data_Set <- read.csv("Data/GOA BT survey 2001-2017_capelin.csv", header=TRUE)
+Data_Set <- read.csv("vast-examples/GOA BT survey 2001-2017_capelin.csv", header=TRUE)
 Data_descrip = "goaBT2001-2017_capelin" #data description
 
 ### Define VAST version
@@ -161,7 +160,7 @@ X_xtp[,,5] <- (X_xtp[,,4]^2)                                                    
 # Select covariates from X_xtp (here we select all of them so we can turn some off):
 F.covar <- c(1,2,3,4,5)  #1=fBtmDepth; 2=BtmTemp; 3=BtmTemp^2; 4=sBtmTemp; 5=sBtmTemp^2
 Map.covar1 <- c(2,3)     #Select covariates from F.covar based on vector element # to turn off in Encounter probability model - 0=all covars on
-Map.covar2 <- c(2,3) #Select covariates from F.covar based on vector element # to turn off in Positive density model - 0=all covars on
+Map.covar2 <- c(2,3,4,5) #Select covariates from F.covar based on vector element # to turn off in Positive density model - 0=all covars on
 # Subset X_xtp (in this example, we retain all covariates)
 X_xtp.x <- X_xtp[,,F.covar,drop=FALSE]
 # Convert NAs to 0 - these samples will not be included in likelihood estimate
@@ -175,9 +174,14 @@ TmbData = VAST::make_data("Version"=Version, "FieldConfig"=FieldConfig, "Overdis
                           "ObsModel"=ObsModel, "c_iz"=rep(0,nrow(Data_Geostat)), "b_i"=Data_Geostat$Catch_KG, "a_i"=Data_Geostat$AreaSwept_km2,
                           "s_i"=Data_Geostat$knot_x - 1, "t_iz"=as.numeric(Data_Geostat$Year_Num), "a_xl"=Spatial_List$a_xl, "MeshList"=Spatial_List$MeshList, 
                           "GridList"=Spatial_List$GridList, "Method"=Spatial_List$Method, "Options"=Options, "X_xtp"=X_xtp.x, Aniso=Aniso ) 
-
+names(TmbData)
 ### Manually generate Parameter & Map lists *** Necessary if you are turning off (i.e. Mapping) covariates in X_xtp
+# Generate Parameter list
 Params = VAST::Param_Fn( Version=Version, DataList=TmbData, RhoConfig=RhoConfig )
+#set initial parameter values to 0 for covariates that will be turned off (identified by Map.covar1 & Map.covar2)
+Params$gamma1_ctp[,,Map.covar1] <- 0 
+Params$gamma2_ctp[,,Map.covar2] <- 0 
+# Generate Map list
 Map = VAST::Make_Map( "DataList"=TmbData, "TmbParams"=Params, "RhoConfig"=RhoConfig)
 # Make a copy of Map
 Map.x <- Map
@@ -202,7 +206,7 @@ TmbList = VAST::make_model("TmbData"=TmbData, "Version"=Version, "RhoConfig"=Rho
 Obj = TmbList[["Obj"]]
 
 ### Run optimizer with Newton steps to improve convergence
-Opt <- TMBhelper::fit_tmb ( "obj"=Obj, lower=TmbList[["Lower"]], upper=TmbList[["Upper"]], "getsd"=TRUE, "newtonsteps"=3, "savedir"=DateFile, "bias.correct"=FALSE )                                                         
+Opt <- TMBhelper::fit_tmb ( "obj"=Obj, lower=TmbList[["Lower"]], upper=TmbList[["Upper"]], "getsd"=TRUE, "newtonsteps"=1, "savedir"=DateFile, "bias.correct"=FALSE )                                                         
 
 ############################################################################################################################################################
 ### Model Outputs
