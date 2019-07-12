@@ -9,7 +9,7 @@ library(TMB)
 library(VAST)
 library(TMBhelper)
 library(ThorsonUtilities)
-
+library(FishStatsUtils)
 ############################################################################################################################################################
 ### Define Model structure
 ##########################
@@ -18,11 +18,17 @@ rm(list=ls())
 # HomeDir <- getwd()
 
 ### Input my data - *** DEMO: capelin data from AFSC Gulf of Alaska bottom trawl survey for 2001-2017 (odd years only), with in situ bottom temperatures ***
-Data_Set <-  read.csv("./data/manual_compile_2019-05-13.csv", na.strings = "#N/A")
+Data_Set <-  read.csv("./data/manual_compile_2019-05-13.csv", na.strings = "#N/A") 
+Data_Set <- Data_Set[Data_Set$Longitude != "" & Data_Set$Latitude != ""  ,]
+## reformat lat-lon
+Data_Set$LATITUDE <- as.numeric(gsub("\\s", ".", gsub("[.]","", gsub("'","",Data_Set$Latitude))))
+Data_Set$LONGITUDE <- as.numeric(gsub("\\s", ".", gsub("[.]","", gsub("'","",Data_Set$Longitude))))
+
+Data_Set$LONGITUDE[Data_Set$LONGITUDE > 0] <- Data_Set$LONGITUDE[Data_Set$LONGITUDE > 0]*-1
 
 ## Make a dummy column on Data_Set that can talk to the pre-set Extrapolation Grids
-# Data_Set$REG_BIG <- ## SOMEHOW MATCH THIS TO A LARGER REGION -- GET INFO FROM ALLAN
-
+Data_Set$REG_BIG <- with(Data_Set, ifelse(LATITUDE < 49, 'WC', 'AK'))
+# with(Data_Set, plot(Lat2 ~ Lon2))
 Data_descrip = "IPHC_Survey_NPUE" #data description
 
 ### Define VAST version
@@ -82,25 +88,108 @@ levels(Data_Geostat$Year_Num) <- c(1:length(unique(Data_Set$YEAR)))
 
 ##### *** D. Extrapolation grid *** -- MAKE CUSTOM
 # Region that tells software which grid to use
-Region = "Gulf_of_Alaska"
+## thanks Jim
+comblist <- list(); strata.limits <- data.frame('STRATA'="All_areas")
+# if('AK' %in% Data_Set$REG_BIG){
+  # Extract strata boundaries by region - for 
+  # GOA.sl = c(range(Data_Set$LONGITUDE), range(Data_Set$LATITUDE))
+  # WGOA.sl = c(range(Data_Set$LONGITUDE[Data_Set$fRegion=="WGOA"]), range(Data_Set$LATITUDE[Data_Set$fRegion=="WGOA"]))
+  # CGOA.sl = c(range(Data_Set$LONGITUDE[Data_Set$fRegion=="CGOA"]), range(Data_Set$LATITUDE[Data_Set$fRegion=="CGOA"]))
+  # NGOA.sl = c(range(Data_Set$LONGITUDE[Data_Set$fRegion=="NGOA"]), range(Data_Set$LATITUDE[Data_Set$fRegion=="NGOA"]))
+  # EGOA.sl = c(range(Data_Set$LONGITUDE[Data_Set$fRegion=="EGOA"]), range(Data_Set$LATITUDE[Data_Set$fRegion=="EGOA"]))
+  # Specify strata limits for GOA survey domain and 4 GOA subregions
+  # strata.limits <- data.frame(
+  #   'STRATA' = c("GOA","WGOA","CGOA","NGOA","EGOA"),
+  #   'west_border' = c(GOA.sl[1], WGOA.sl[1], CGOA.sl[1], NGOA.sl[1], EGOA.sl[1]),
+  #   'east_border' = c(GOA.sl[2], WGOA.sl[2], CGOA.sl[2], NGOA.sl[2], EGOA.sl[2]),
+  #   'north_border' = c(GOA.sl[4], WGOA.sl[4], CGOA.sl[4], NGOA.sl[4], EGOA.sl[4]),
+  #   'south_border' = c(GOA.sl[3], WGOA.sl[3], CGOA.sl[3], NGOA.sl[3], EGOA.sl[3]) )
+  
+#   EBS_extrap = make_extrapolation_info(
+#     Region = "Eastern_Bering_Sea",
+#     strata.limits = strata.limits,
+#     zone = 32,
+#     flip_around_dateline = F
+#   )
+#   append(comblist, EBS_extrap)
+# }
+# if('BC' %in% Data_Set$REG_BIG){
+#   BC_extrap = make_extrapolation_info(
+#     Region = "british_columbia",
+#     strata.limits = NA,
+#     zone = 32,
+#     flip_around_dateline = F
+#   )
+#   BC_extrap$Data_Extrap$Area_km2 <- BC_extrap$Area_km2_x
+#   names(BC_extrap$a_el) <- "All_areas"
+# }
+# if('WC' %in% Data_Set$REG_BIG){
+#   CC_extrap = make_extrapolation_info(
+#     Region = "california_current",
+#     strata.limits = strata.limits,
+#     zone = 32,
+#     flip_around_dateline = F
+#   )
+#   CC_extrap$Data_Extrap$Area_km2 <- CC_extrap$Area_km2_x
+# }
+# 
+# if('WC' %in% REG & 'BC' %in% REG & 'AK' %in% REG){
+#   Extrapolation_List <- combine_extrapolation_info("EBS" = EBS_extrap,
+#                                                    "NBS" = NBS_extrap,
+#                                                    "GOA" = GOA_extrap,
+#                                                    "BC" = BC_extrap,
+#                                                    "CC" = CC_extrap)
+# }
+# if('WC' %in% REG & 'AK' %in% REG){
+#   Extrapolation_List <- combine_extrapolation_info(
+#     "AK" = EBS_extrap,
+#     "CC" = CC_extrap)
+# }
+# 
+# if('AK' %in% REG){
+#   Extrapolation_List <- EBS_extrap                                          
+# }
+# 
+# if('WC' %in% REG){
+#   Extrapolation_List <- CC_extrap
+# }
+# 
+# if('BC' %in% REG){
+#   Extrapolation_List <- BC_extrap
+# }
+  
+  EBS_extrap = make_extrapolation_info( Region = "Eastern_Bering_Sea", strata.limits = strata.limits, zone = 32, flip_around_dateline = F )
+  NBS_extrap = make_extrapolation_info( Region = "Northern_Bering_Sea", strata.limits = strata.limits, zone = 32, flip_around_dateline = F )
+  GOA_extrap = make_extrapolation_info( Region = "gulf_of_alaska", strata.limits = strata.limits, zone = 32, flip_around_dateline = T )
+  # BC_extrap = make_extrapolation_info( Region = "british_columbia", strata.limits = strata.limits, zone = 32, flip_around_dateline = F )
+  # BC_extrap$Data_Extrap$Area_km2 <- BC_extrap$Area_km2_x
+  # names(BC_extrap$a_el) <- "All_areas"
+  CC_extrap = make_extrapolation_info( Region = "california_current", strata.limits = strata.limits, zone = 32, flip_around_dateline = TRUE )
+  CC_extrap$Data_Extrap$Area_km2 <- CC_extrap$Area_km2_x
+  
+  Extrapolation_List = combine_extrapolation_info(
+    "EBS" = EBS_extrap,
+    "NBS" = NBS_extrap,
+    "GOA" = GOA_extrap,
+   # "BC" = BC_extrap,
+    "CC" = CC_extrap
+  )
+  
+
+# Region = "Gulf_of_Alaska"
+
+# Extrapolation_List <- combine_extrapolation_info("EBS" = EBS_extrap,
+#                                                  "NBS" = NBS_extrap,
+#                                                  "GOA" = GOA_extrap,
+#                                                  "BC" = BC_extrap,
+#                                                  "CC" = CC_extrap)
 
 # *** DEMO: how to include multiple strata within the extrapolation grid ***
-# Extract strata boundaries by region - for 
-GOA.sl = c(range(Data_Set$LONGITUDE), range(Data_Set$LATITUDE))
-WGOA.sl = c(range(Data_Set$LONGITUDE[Data_Set$fRegion=="WGOA"]), range(Data_Set$LATITUDE[Data_Set$fRegion=="WGOA"]))
-CGOA.sl = c(range(Data_Set$LONGITUDE[Data_Set$fRegion=="CGOA"]), range(Data_Set$LATITUDE[Data_Set$fRegion=="CGOA"]))
-NGOA.sl = c(range(Data_Set$LONGITUDE[Data_Set$fRegion=="NGOA"]), range(Data_Set$LATITUDE[Data_Set$fRegion=="NGOA"]))
-EGOA.sl = c(range(Data_Set$LONGITUDE[Data_Set$fRegion=="EGOA"]), range(Data_Set$LATITUDE[Data_Set$fRegion=="EGOA"]))
-# Specify strata limits for GOA survey domain and 4 GOA subregions
-strata.limits <- data.frame(
-  'STRATA' = c("GOA","WGOA","CGOA","NGOA","EGOA"),
-  'west_border' = c(GOA.sl[1], WGOA.sl[1], CGOA.sl[1], NGOA.sl[1], EGOA.sl[1]),
-  'east_border' = c(GOA.sl[2], WGOA.sl[2], CGOA.sl[2], NGOA.sl[2], EGOA.sl[2]),
-  'north_border' = c(GOA.sl[4], WGOA.sl[4], CGOA.sl[4], NGOA.sl[4], EGOA.sl[4]),
-  'south_border' = c(GOA.sl[3], WGOA.sl[3], CGOA.sl[3], NGOA.sl[3], EGOA.sl[3]) )
 
-Extrapolation_List = FishStatsUtils::make_extrapolation_info( Region=Region, strata.limits=strata.limits,
-                                                              observations_LL = Data_Geostat[,c("Lat","Lon")] )
+
+# Extrapolation_List = FishStatsUtils::make_extrapolation_info( Region=c('eastern_bering_sea','california_current'),
+#                                                               strata.limits=strata.limits,
+#                                                               observations_LL = Data_Geostat[,c("LATITUDE","LONGITUDE")] )
 # If you want to limit extrapolation to a specified area around each knot:
 #Extrapolation_List = FishStatsUtils::make_extrapolation_info( Region = "Other", strata.limits = strata.limits,
 #                                                              observations_LL = Data_Geostat[,c("Lat","Lon")],
