@@ -1,9 +1,13 @@
 {
-    "path" : "C:/Users/Maia Kapur/Dropbox/UW/sab-idx/data",
+    "path" : "C:/Users/Maia Kapur/Dropbox/UW/sab-idx/runs/2019-08-27_Anoplopoma fimbria_nx=100/Obs=20_Field=11IID11IID_Rho=0044_fine=FALSE/__BiasCorr=TRUE",
     "sortOrder" : [
         {
             "ascending" : true,
             "columnIndex" : 2
+        },
+        {
+            "ascending" : false,
+            "columnIndex" : 4
         }
     ]
 }

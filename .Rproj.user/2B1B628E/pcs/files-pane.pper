@@ -1,6 +1,10 @@
 {
-    "path" : "C:/Users/mkapur/Dropbox/UW/sab-idx/vast-examples",
+    "path" : "C:/Users/mkapur/Dropbox/UW/sab-idx",
     "sortOrder" : [
+        {
+            "ascending" : false,
+            "columnIndex" : 4
+        },
         {
             "ascending" : true,
             "columnIndex" : 2
