@@ -1,10 +1,4 @@
-############################################################################################################################################################
-#
-### Example for running VAST with inputs for spatially-explicit categorical and continuous covariates
-### Last updated: 7/8/2019 Dave McGowan, UW SAFS
-#
-############################################################################################################################################################
-library(dplyr)
+# devtools::install_github("james-thorson/VAST", dependencies = F)
 library(TMB)
 library(VAST)
 library(TMBhelper)
@@ -176,7 +170,7 @@ comblist <- list(); strata.limits <- data.frame('STRATA'="All_areas")
   
   obsLL <- data.frame('Lon' = Data_Set$LONGITUDE, 'Lat' = Data_Set$LATITUDE) 
   
-    Other_extrap = make_extrapolation_info(
+    Other_extrap <- make_extrapolation_info(
       Region = "other",
       strata.limits = strata.limits,
       observations_LL = obsLL,
@@ -285,7 +279,7 @@ X_xtp.x = ifelse( is.na(X_xtp.x), 0, X_xtp.x)
 rm(TmbList, Obj, Opt, Report, Params, Map, Map.x) #Delete objects & outputs from previous model runs
 
 Aniso = 0 #Specify either 0=assume isotropy or 1=assume geometric anisotropy
-TmbData = VAST::Data_Fn("Version"=Version, "FieldConfig"=FieldConfig, "OverdispersionConfig"=OverdispersionConfig, "RhoConfig"=RhoConfig,
+TmbData = VAST::make_data("Version"=Version, "FieldConfig"=FieldConfig, "OverdispersionConfig"=OverdispersionConfig, "RhoConfig"=RhoConfig,
                           "ObsModel"=ObsModel, "c_iz"=rep(0,nrow(Data_Geostat)), "b_i"=Data_Geostat$Catch_KG, "a_i"=Data_Geostat$AreaSwept_km2,
                           "s_i"=Data_Geostat$knot_x - 1, "t_iz"=as.numeric(Data_Geostat$Year_Num), "a_xl"=Spatial_List$a_xl, "MeshList"=Spatial_List$MeshList, 
                           "GridList"=Spatial_List$GridList, X_xtp = X_xtp.x, "Method"=Spatial_List$Method, "Options"=Options,  Aniso=Aniso ) 
@@ -311,7 +305,7 @@ if(length(unique(TmbData$c_iz))>1){
 # Specify if using restricted max. likelihood
 USE_REML = FALSE 
 ### Build TMB object ##MAKE_MODEL is new version
-TmbList = VAST::Build_TMB_Fn("TmbData"=TmbData, "Version"=Version, "RhoConfig"=RhoConfig, "Method"=Method, Use_REML = USE_REML,
+TmbList = VAST::make_model("TmbData"=TmbData, "Version"=Version, "RhoConfig"=RhoConfig, "Method"=Method, Use_REML = USE_REML,
                            "loc_x"=Spatial_List$loc_x, "Parameters"=Params, "Map"=Map.x,  "RunDir"=DateFile)
 Obj = TmbList[["Obj"]]
 
