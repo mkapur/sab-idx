@@ -37,44 +37,9 @@ zone <- 31
 
 # grid2 <- data.frame(Lon=grid2$Lon,Lat=grid2$Lat,Area_km2=grid2$Area_km2,STRATA = grid2$X1.nrow.grid1.) #,REGION = grid2$STRATA, STRATA = grid2$X1.nrow.grid1.
 
-## Input my data - IPHC manual compilation with NPUE ----
-# Data_Set <-  read.csv("./data/IPHC/manual_compile_2019-05-13.csv", na.strings = "#N/A") %>% sample_n(., 1000)
-# Data_Set <- Data_Set[Data_Set$Longitude != "" & Data_Set$Latitude != ""  ,]
-# ## reformat lat-lon
-# Data_Set$LATITUDE <- as.numeric(gsub("\\s", ".", gsub("[.]","", gsub("'","",Data_Set$Latitude))))
-# Data_Set$LONGITUDE <- as.numeric(gsub("\\s", ".", gsub("[.]","", gsub("'","",Data_Set$Longitude))))
-# Data_Set$LONGITUDE[Data_Set$LONGITUDE > 0] <- Data_Set$LONGITUDE[Data_Set$LONGITUDE > 0]*-1
-# ## Make a dummy column on Data_Set that can talk to the pre-set Extrapolation Grids
-# Data_Set$REG_BIG <- with(Data_Set, ifelse(LATITUDE < 49, 'WC', 'AK'))
-# # with(Data_Set, plot(Lat2 ~ Lon2))
-# Data_descrip = "IPHC_Survey_NPUE" #data description
-# Data_Set <- Data_Set %>% filter(LONGITUDE >= -180 & LONGITUDE <= 180)
-# Data_Geostat <- data.frame( "Catch_KG"= Data_Set$Sablefish_n3, 
-#                             "Year"=  Data_Set$YEAR, 
-#                             "Vessel"= rep("IPHC", nrow(Data_Set)), 
-#                             "AreaSwept_km2"= rep(1,nrow(Data_Set)), #*100 (i think this actually put it in hectares if * 100)
-#                             "Lat"= Data_Set$LATITUDE, 
-#                             "Lon"= Data_Set$LONGITUDE, 
-#                             "Pass"=0, 
-#                             "Stratum"= Data_Set$REG_BIG,
-#                             "Survey" = Data_Set$Station)
 
 
-# Data_Set <- read.csv("./data/AK/race_cpue_by_haul.csv")  %>% filter(Starting.Longitude..dd. >= -180 & Starting.Longitude..dd. <= -140 & !is.na(Effort..km2.))
-# Data_Geostat <- data.frame( "Catch_KG"= Data_Set$Weight..kg.,
-#                             "Year"=  Data_Set$Year,
-#                             "Vessel"= Data_Set$Vessel.Number,
-#                             "AreaSwept_km2"=  Data_Set$Effort..km2., #*100 (i think this actually put it in hectares if * 100)
-#                             "Lat"= Data_Set$Starting.Latitude..dd.,
-#                             "Lon"= Data_Set$Starting.Longitude..dd.,
-#                             "Pass"=0,
-#                             "Stratum"= Data_Set$Stratum.INPFC.Area,
-#                             "Survey" = Data_Set$Survey)
-# rm(Data_Set)
-# 
-# saveRDS(Data_Geostat, file = "./data/AK/Data_Geostat_AK.rds")
 
-# Region="User"
 # 
 
 # strata.limits <- data.frame('STRATA'="All_areas")
@@ -89,12 +54,12 @@ zone <- 31
 #                             "Pass"=0, 
 #                             "Stratum"= Data_Set$REG_BIG,
 #                             "Survey" = Data_Set$Station)
-# strata.limits <- data.frame(
-#   'STRATA' = c("R3","R4","R5"),
-#   'west_border' = c(-180, -145, -115),
-#   'east_border' = c(-145, -115, -110),
-#   'north_border' = c(63, 63, 63),
-#   'south_border' = c(50, 50, 50) )
+strata.limits <- data.frame(
+  'STRATA' = c("R3","R4","R5"),
+  'west_border' = c(-180, -145, -115),
+  'east_border' = c(-145, -115, -110),
+  'north_border' = c(63, 63, 63),
+  'south_border' = c(50, 50, 50) )
 
 
 # #western bering sea                                   
@@ -114,16 +79,71 @@ zone <- 31
 #                                  "R5" =c(rep(0,nrow(Other_extrap$a_el)),rep(0,nrow(Other_extrap$a_el)),Other_extrap$a_el[,1]) )
 
 # colSums( Extrapolation_List$a_el ) #check area sums
+print()
 # saveRDS(Other_extrap, file = "./data/r345_extrap.rds")
 
+## Make R3/R4/R5 (AK ONLY) ---- 
+## you will need to have obs in Data_Geostat in each region otherwise it'll be zero.
+# strata.limits <- data.frame(
+#   'STRATA' = c("R5","R4", "R3"),
+#   'west_border' = c(-180, -145, -143),
+#   'east_border' = c(-145, -144, -110),
+#   'north_border' = c(63, 63, 63),
+#   'south_border' = c(50, 50, 50) )
+strata.limits <- data.frame(
+  'STRATA' = c("R5","R4", "R3"),
+  'west_border' = c(-180, -145, -135),
+  'east_border' = c(-145, -135, -110),
+  'north_border' = c(63, 63, 63),
+  'south_border' = c(50, 50, 50) )
+# strata.limits <- data.frame(
+#   'STRATA' = c("All areas","WGOA","CGOA"),
+#   'west_border' = c(-159.62, -159.62, -154.98),
+#   'east_border' = c(-149.92, -154.15, -149.92),
+#   'north_border' = c(58.73, 57.02, 58.73),
+#   'south_border' = c(54.59, 54.59, 56.31) )
 
+# print(strata.limits)
+
+# R345_Extrap <- Prepare_User_Extrapolation_Data_Fn(
+#   Region = Region,
+#   strata.limits = strata.limits,
+#   observations_LL = Data_Set[, c("LONGITUDE", "LATITUDE")],
+#   flip_around_dateline =
+#     TRUE,
+#   input_grid = data.frame(
+#     'Lon' = Data_Geostat$Lon,
+#     'Lat' = Data_Geostat$Lat,
+#     'Area_km2' = rep(4, nrow(Data_Geostat))
+#   )
+# )
+# R345_Extrap <-
+#   make_extrapolation_info(
+#     Region = 'User',
+#     strata.limits = strata.limits,
+#     input_grid = data.frame(
+#       'Lon' = Data_Geostat$Lon,
+#       'Lat' = Data_Geostat$Lat,
+#       'Area_km2' = rep(4, nrow(Data_Geostat))
+#     )
+#   )
+# # Reduce to one column
+# # Other_extrap$a_el$All_areas <- rep(4, nrow(Other_extrap$a_el))
+# R345_Extrap$a_el <- cbind( "All"=Other_extrap$a_el[,1],
+#                                  "R3"=c(Other_extrap$a_el[,1],rep(0,nrow(Other_extrap$a_el)),rep(0,nrow(Other_extrap$a_el))),
+#                                  "R4"=c(rep(0,nrow(Other_extrap$a_el)),Other_extrap$a_el[,1],rep(0,nrow(Other_extrap$a_el))),
+#                                  "R5" =c(rep(0,nrow(Other_extrap$a_el)),rep(0,nrow(Other_extrap$a_el)),Other_extrap$a_el[,1]) )
+
+# colSums( R345_Extrap$a_el ) #check area sums
+# print()
+# saveRDS(R345_Extrap, file = "./data/RDSFILES/r345_extrap.rds"); rm(R345_Extrap)
 
 
 
 #load Data_Geostat & Extrapolation list
 working_directory <- getwd()
 
-Extrapolation_List <-  readRDS("./data/RDSFILES/Other_extrap.rds") ## made in VAST_dataprep -- all_areas
+Extrapolation_List <-  readRDS("./data/RDSFILES/r345_extrap.rds")
 # Extrapolation_List <-  readRDS("./data/RDSFILES/r345_extrap.rds") ## made in VAST_dataprep -- only has AK in three regions
 
 Data_Geostat <-  readRDS("./data/AK/Data_Geostat_AK.rds") ## made in 
@@ -162,7 +182,17 @@ Options =  c("Calculate_Range"=FALSE, "Calculate_effective_area"=FALSE, "SD_site
 # strata.limits <- data.frame('STRATA'="All_areas")
 
 # Run directory
-RunDir <- paste0(DateFile,"Obs=",paste0(ObsModel,collapse=""),"_Field=",paste0(FieldConfig,collapse=""),"_Rho=",paste0(RhoConfig,collapse=""),"_fine=",fine_scale,"/")
+RunDir <-
+  paste0(
+    DateFile,
+    "Obs=",
+    paste0(ObsModel, collapse = ""),
+    "_Field=",
+    paste0(FieldConfig, collapse = ""),
+    "_Rho=",
+    paste0(RhoConfig, collapse = ""),
+    "/"
+  )
 dir.create(RunDir)
 
 #"Covariate",
@@ -175,7 +205,7 @@ capture.output( Record, file=paste0(RunDir,"Record.txt"))
 ################
 
 # Build
-Spatial_List <-FishStatsUtils::make_spatial_info( grid_size_km=grid_size_km, 
+Spatial_List <- FishStatsUtils::make_spatial_info( grid_size_km=grid_size_km, 
                                                   n_x=n_x, 
                                                   fine_scale=fine_scale, 
                                                   Method=Method, 
@@ -183,7 +213,7 @@ Spatial_List <-FishStatsUtils::make_spatial_info( grid_size_km=grid_size_km,
                                                   Lat_i =Data_Geostat[,'Lat'], 
                                                   LON_intensity=Extrapolation_List$Data_Extrap[which(Extrapolation_List$Data_Extrap[,'Include']==TRUE),'Lon'], 
                                                   LAT_intensity=Extrapolation_List$Data_Extrap[which(Extrapolation_List$Data_Extrap[,'Include']==TRUE),'Lat'],
-                                                  Extrapolation_List=Extrapolation_List, DirPath=RunDir, Save_Results=TRUE )
+                                                  Extrapolation_List=Extrapolation_List, DirPath=RunDir, Save_Results=T )
 
 
 ################
@@ -232,8 +262,7 @@ load(paste0(Run2Dir,"parameter_estimates.Rdata")) ## save it in subdir
 
 FishStatsUtils::plot_biomass_index(TmbData,
                                    Sdreport = Save$SDReport,
-                                   DirName = Run2Dir,
-                                   strata_names = "r")
+                                   DirName = Run2Dir)
 
 
 VAST::check_fit(parameter_estimates = parameter_estimates, quiet = FALSE) == F ##Did an automated check find an obvious problem code (TRUE is bad; FALSE is good)
