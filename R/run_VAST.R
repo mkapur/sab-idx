@@ -1,10 +1,10 @@
 ## MKAPUR MOD FROM J THORSON "RUN_COMBINED_MODEL_2019_09_04"
 # Use development branch
-remotes::install_github("james-thorson/FishStatsUtils", ref="development")
+# remotes::install_github("james-thorson/FishStatsUtils", ref="development")
 # remotes::install_github("james-thorson/VAST", ref="development")
 ## dev @ Sep 19 2019
-remotes::install_github("james-thorson/VAST",
-                        ref="15c7a0ba843bd199670afe71c6cb9907078cf431")
+# remotes::install_github("james-thorson/VAST",
+#                         ref="15c7a0ba843bd199670afe71c6cb9907078cf431")
 
 
 #Libraries
@@ -81,7 +81,7 @@ if( file.exists(paste0(DateFile,"Record.RData")) ){
   # Record = ThorsonUtilities::bundlelist( c("Surveys_to_include","n_x","FieldConfig","RhoConfig","ObsModel",
   #                                          "Spatial_Smoother","BC_catchability","BiasCorr","Zone","Options","BaseQ","Use_REML","fine_scale",
   #                                          "Year_Range","create_strata_per_region") )
-  capture.output( Record, file=paste0(DateFile,"Record.txt"))
+  # capture.output( Record, file=paste0(DateFile,"Record.txt"))
   Record <- ThorsonUtilities::bundlelist( c("Version","Method","grid_size_km","n_x","BC_catchability","BaseQ","Use_REML","fine_scale",
                                            "FieldConfig","RhoConfig","OverdispersionConfig", "Year_Range",
                                            "ObsModel","Aniso","fine_scale","Options", "create_strata_per_region") )
@@ -346,7 +346,7 @@ Report <- TmbList$Obj$report()
 ParHat <- TmbList$Obj$env$parList()
 
 # Save stuff
-Save <- list("Opt"=Opt, "Report"=Report, "ParHat"=TmbList$Obj$env$parList(Opt$par))
+Save <- list("Opt"=Opt, "Report"=Report, "ParHat"=TmbList$Obj$env$parList(Opt$par),'Obj' = Obj)
 save(Save, file=paste0(DateFile,"Save.RData"))
 
 
@@ -432,3 +432,5 @@ plot_maps( plot_set=3, Report=Report, PlotDF=MapDetails_List[["PlotDF"]],
            working_dir=DateFile, Year_Set=Year_Set )
 
 
+
+source("./R/reVAST_newstrata.R")
