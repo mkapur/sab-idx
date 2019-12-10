@@ -25,3 +25,5 @@
 *.csv
 *.xlsx
 *.zip
+*.pper
+.RData
