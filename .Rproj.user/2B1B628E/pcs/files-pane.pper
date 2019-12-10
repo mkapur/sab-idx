@@ -1,8 +1,8 @@
 {
-    "path" : "C:/Users/mkapur/Dropbox/UW/sab-idx",
+    "path" : "C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2019-11-04_nx=144_Species=SAB_Triennial_WCGBTS_BCt_GOA_EBS",
     "sortOrder" : [
         {
-            "ascending" : false,
+            "ascending" : true,
             "columnIndex" : 4
         },
         {
