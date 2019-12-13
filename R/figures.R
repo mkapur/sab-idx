@@ -47,7 +47,40 @@ ggsave(plot = Rmisc::multiplot(plotlist = plist, cols = 1) ,
 Data_Geostat %>% group_by(State) %>%
   dplyr::summarise(mean(AreaSwept_km2))
 
+
+
+
 ## Comparison of VAST outputs with assessment values by region ----
+# babysteps version ----
+## load CPUE used in 2019 SAB assessment [from KFJ on Gdrive]
+sab2019 <- read.csv(paste0("C:/Users/",comp.name,"/Dropbox/UW/sab-idx/runs/sabWCVAST/WCGBTS/Table_for_SS3.csv"))
+
+sab2019_2 <- read.csv(paste0("C:/Users/",comp.name,"/Dropbox/UW/sab-idx/data/sab2019update_vast.csv"))%>% 
+  # sab2019$Fleet[sab2019$Fleet == 'All_areas'] <- "2019 WCBTS Used in Assessment"
+  mutate(Unit = NA, SD_mt = NA, Fleet = Fleet_name ) %>%
+  select(Yr, Unit, Fleet, Obs, SE, SD_mt)
+# "SAB_2019_Assessment CPUE [vast]"
+names(sab2019_2)[c(1,4,5)] <- c('Year','Estimate_metric_tons', "SD_log")
+
+bind_rows(read.csv(paste0(DateFile,"/Table_for_SS3.csv")), sab2019, sab2019_2) %>%
+  filter(Fleet %in% c("AKSHLF",
+                      "All_areas",
+                      "California_current")) %>%
+  ggplot(.,
+         aes(x = Year, y = Estimate_metric_tons, col = Fleet)) +
+  theme_minimal()+
+  theme(panel.grid = element_blank(),
+        legend.position = 'bottom') +
+  scale_y_continuous(limits = c(0,300000)) +
+  scale_color_brewer(palette = 'Accent') +
+  labs(x = 'Year', y = 'Estimate (mt)', title = paste0('VAST-Standardized Indices vs Assessment values')) +
+  scale_color_manual(values = c('grey40','grey44','blue'))+
+  geom_line(pch = 1, cex = 3) +
+  geom_errorbar(aes(ymin = Estimate_metric_tons-SD_mt, ymax = Estimate_metric_tons+SD_mt), lwd = 0.9)
+
+
+
+# old version ----
 ## how about we instead use the raw data_geostat?
 
 assc <- read.csv("./data/assessment_CPUE.csv") %>%
@@ -64,7 +97,22 @@ assc <- read.csv("./data/assessment_CPUE.csv") %>%
                      Index = 'Filter_StRS', Type = 'Biomass', Source = 'Assessment',
                      Estimate_metric_tons =meanCPUE, Fleet2 = 
                        'BC') %>%
-              select(-meanCPUE, -SET_YEAR))
+              select(-meanCPUE, -SET_YEAR)) %>%
+  bind_rows(.,
+            read.csv(paste0(DataFile,"/BC/BC_trawl_survey_sable_data.Oct312019.csv"))  %>% 
+              filter(LONGITUDE <= 0 & !is.na(CATCH_WEIGHT)) %>%
+              group_by(YEAR) %>% 
+              dplyr::summarise(meanCPUE = mean(CATCH_WEIGHT)) %>%
+              mutate(Year = YEAR, Value = meanCPUE, CV = NA, 
+                     Index = 'Filter_BCTrawl', Type = 'Biomass', Source = 'Assessment',
+                     Estimate_metric_tons =meanCPUE, Fleet2 = 
+                       'BC') %>%
+              select(-meanCPUE, -YEAR)) %>%
+  bind_rows(., sab2019_2 %>% 
+              mutate(Fleet2 = 'WC', Index = Fleet, Value = Estimate_metric_tons, Type = 'Abundance',
+                     Source = 'assessment') %>%
+              select(Year, Estimate_metric_tons,  Index, Type, Source, Fleet2))
+
 
 
   
@@ -79,63 +127,105 @@ assc$Estimate_metric_tons[assc$Fleet2 == 'BC'] <- assc$Value[assc$Fleet2 == 'BC'
 
 names(assc) <- c('Year','Value','SD_log',"Fleet","TYPE", 'Source',"Estimate_metric_tons","Fleet2")
 
-assc <- assc %>%select(Year, Fleet, Estimate_metric_tons, SD_log, TYPE, Source, Fleet2 ) %>%
+assc <- assc %>%
+  select(Year, Fleet, Estimate_metric_tons, SD_log, TYPE, Source, Fleet2 ) %>%
   mutate(uci=NA, lci = NA)
 
+
 ## see line 81 here for conv https://github.com/James-Thorson-NOAA/FishStatsUtils/blob/master/R/plot_index.R
-vastc <- read.csv(paste0(DateFile,"/Table_for_SS3_original.csv")) %>%
+vastc <- read.csv(paste0(DateFile,"Table_for_SS3.csv")) %>%
                     mutate(TYPE = 'Abundance', Source = 'VAST',
                            lci = Estimate_metric_tons-SD_mt,
                            uci = Estimate_metric_tons+SD_mt) %>%
-  select(Year, Fleet, Estimate_metric_tons, SD_log, TYPE, Source, uci, lci ) %>%
-  filter(Fleet != 'Eastern_Bering_Sea')
+  select(Year, Fleet, Estimate_metric_tons, SD_log, TYPE, Source, uci, lci ) #%>%
+  # filter(Fleet != 'Gulf_of_Alaska')
 vastc$Fleet2 <- NA
 for(i in 1:nrow(vastc)){
   vastc$Fleet2[i] <- ifelse(vastc$Fleet[i] == "California_current",
                              "WC", 
                              ifelse(vastc$Fleet[i] == "British_Columbia", "BC",
                                     "AK"))
-  if(vastc$Fleet[i] == 'All')   vastc$Fleet2[i] <- NA
-  
+  if(vastc$Fleet[i] == 'AllAreas')   vastc$Fleet2[i] <- "ALL"
 }
 
+# vastc$Estimate_metric_tons[vastc$Fleet2 == 'BC'] <- vastc$Estimate_metric_tons[vastc$Fleet2 == 'BC'] * 1000
+# vastc$uci[vastc$Fleet2 == 'BC'] <- vastc$uci[vastc$Fleet2 == 'BC'] * 1000
+# vastc$lci[vastc$Fleet2 == 'BC'] <- vastc$lci[vastc$Fleet2 == 'BC'] * 1000
+vastc$lci[vastc$lci < 0 ] <- 0
+# vastc$Estimate_metric_tons[vastc$Fleet2 == 'WC'] <- vastc$Estimate_metric_tons[vastc$Fleet2 == 'WC'] * 1000
+# vastc$uci[vastc$Fleet2 == 'WC'] <- vastc$uci[vastc$Fleet2 == 'WC'] * 1000
+# vastc$lci[vastc$Fleet2 == 'WC'] <- vastc$lci[vastc$Fleet2 == 'WC'] * 1000
+
+# vastc$Estimate_metric_tons[vastc$Fleet2 == 'AK'] <- vastc$Estimate_metric_tons[vastc$Fleet2 == 'AK'] * 1000
+# vastc$uci[vastc$Fleet2 == 'AK'] <- vastc$uci[vastc$Fleet2 == 'AK'] * 1000
+# vastc$lci[vastc$Fleet2 == 'AK'] <- vastc$lci[vastc$Fleet2 == 'AK'] * 1000
+
+
+custnames <- c(paste0('VAST ',c('California Current','British Columbia',
+                                'Gulf of Alaska','Eastern Bering Sea') ),
+               'AK Domestic Longline',' AK Gulf Trawl', 'BC Synoptic Trawl',
+               'Triennial','WCGBTS')
+
 rbind(vastc,assc) %>%
-  filter(Fleet2 %in% c('WC','BC','AK')) %>%
+  filter(Fleet2 %in% c('WC','BC', 'AK')[1:3]) %>%
   filter(Fleet %in% c("California_current","British_Columbia","Gulf_of_Alaska","Eastern_Bering_Sea",
-                      'AK_DOM_LL','AK_GOA_TRW','Filter_StRS','BC_TRAP_SRV_STRAT','WC_TRI_TRW','WC_SH_SLP_TRW')) %>%
+                      'AK_DOM_LL',"AK_GOA_TRW","Filter_BCTrawl", "AKSHLF",  "NWCBO")) %>%
+  filter(Year < 2019) %>%
+  # filter(Fleet %in% c("British_Columbia","Filter_BCTrawl")) %>%
   ggplot(., aes(x = Year, y =Estimate_metric_tons, col = Fleet, linetype = Fleet)) +
-  theme_mk()+
-  # theme(panel.grid.minor = element_blank()) +
-  scale_x_continuous(limits = c(1975,2020)) +
-  # scale_color_brewer(palette = 'Spectral') +
-  scale_color_manual(values = c(rep('blue',3),'gold2','gold','seagreen2','seagreen3','seagreen4','grey22','grey44'))+
-  scale_linetype_manual(values = c(rep('solid',3), rep('dashed',40))) +
-  labs(x = 'Year', y = 'Estimate (mt)', 
-       title = 'Indices from VAST and Assessment, by region') +
-  geom_line(lwd = 0.9)+
-  geom_ribbon(aes(ymin = lci, ymax = uci), alpha = 0.2, col = 'grey') +
-  # geom_point(pch = 1, cex = 3) +
+  theme_bw()+
+  theme(panel.grid = element_blank(),
+        legend.position = 'bottom',
+        legend.text = element_text(size = 12),
+  strip.text.x = element_text(
+    size = 16
+  )) +
+  scale_x_continuous(limits = c(1980,2018),
+                     breaks = seq(1980,2020,10)) +
+  # scale_y_continuous(limits = c(0,200000)) +
+  # scale_color_manual(values = c(rep('blue',4),'gold2','gold','seagreen3','seagreen4','brown','grey22','grey44'))+
+  scale_color_manual(values = c(rep('blue',3),'blue4',
+                                cbbPalette),
+                     labels = c(custnames)) +
+  scale_linetype_manual(values = c(rep('solid',4), rep('dashed',40)),
+                        labels = c(custnames)) +
+  labs(x = 'Year', y = 'Estimate (mt)', color = "", linetype = "",
+       title = '')+ #,
+       # subtitle = 'BC + WC have been multiplied by 1000') +
+  geom_line(lwd = 1)+
+  geom_ribbon(aes(ymin = lci, ymax = uci), 
+              alpha = 0.15, col = 'grey',show.legend = FALSE) +
   facet_wrap(~Fleet2, scales = 'free_y', ncol = 3)
-ggsave(plot = last_plot(), file = paste0("./figures/",Sys.Date(),"_idx_comparison.png"), height = 6, width = 8, unit='in',dpi = 520)
+
+
+  ggsave(plot = last_plot(), 
+       # file = paste0("./figures/",Sys.Date(),"_idx_comparison.png"), 
+       file = paste0(DateFile,"/compare_all.png"),
+       height = 8, width = 12, unit='in',dpi = 520)
 
 
                            
-♥## Prettier index plot ----
+## Prettier index plot ----
 source("C:/Users/maia kapur/Dropbox/kaputils/R/theme_mk.R")
 
-ggplot(read.csv(paste0(DateFile,"/Table_for_SS3.csv")) %>% 
-         mutate(Year = seq(min(Data_Geostat$Year), max(Data_Geostat$Year))),
-       aes(x = Year, y = Estimate_metric_tons, col = Fleet)) +
-  theme_mk()+
-  theme(panel.grid = element_blank()) +
-  # scale_y_continuous(limits = c(0,95000)) +
-  scale_color_brewer(palette = 'Accent') +
-  labs(x = 'Year', y = 'Estimate (mt)', title = paste0('VAST-Standardized Indices')) +
-  # geom_line(lwd = 0s.9)+
-  geom_point(pch = 1, cex = 3) +
-  geom_errorbar(aes(ymin = Estimate_metric_tons-SD_mt, ymax = Estimate_metric_tons+SD_mt), lwd = 0.9)
-
-# ggsave(plot = last_plot(), file = paste0(Run2Dir,"Index-Biomass2.png"), height = 6, width = 8, unit='in',dpi = 520)
+  ggplot(vastc,
+         aes(x = Year, y = Estimate_metric_tons, col = Fleet)) +
+    # theme_mk()+
+    theme_bw()+
+    # theme(panel.grid.minor = element_blank()) +
+    # scale_y_continuous(limits = c(0,95000)) +
+    # scale_color_brewer(palette = 'Blues') +
+    # scale_color_manual(values = c('chartreuse3',cbbPalette)) +
+    labs(x = 'Year', y = 'Estimate (mt)', title = paste0('VAST-Standardized Indices')) +
+    geom_line(lwd = 0.9)+
+    # geom_point(pch = 1, cex = 3) +
+    geom_ribbon(aes(ymin = lci, 
+                    ymax = uci), 
+                alpha = 0.2, 
+                show.legend = FALSE)
+  
+ggsave(plot = last_plot(), file = paste0(DateFile,"Index-Biomass2.png"), 
+       height = 6, width = 8, unit='in',dpi = 520)
 
 
 # source("C:/Users/maia kapur/Dropbox/kaputils/R/theme_mk.R")
