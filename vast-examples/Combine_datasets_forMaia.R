@@ -112,7 +112,9 @@ TmbData = make_data(#"X_itp"=X_itp,
                     "spatial_list"=Spatial_List, 
                     "Options"=Options )
 
-TmbList = make_model("build_model"=TRUE, "TmbData"=TmbData, "RunDir"=RootDir, "Version"=Version, "RhoConfig"=RhoConfig, "loc_x"=Spatial_List$loc_x, "Method"=Method, "TmbDir"=TmbDir)
+TmbList = make_model("build_model"=TRUE, "TmbData"=TmbData, "RunDir"=RootDir, 
+                     "Version"=Version, "RhoConfig"=RhoConfig, 
+                     "loc_x"=Spatial_List$loc_x, "Method"=Method, "TmbDir"=TmbDir)
 Obj = TmbList[["Obj"]]
 Opt = TMBhelper::fit_tmb( obj=Obj, getsd=TRUE, savedir=Run2Dir, getReportCovariance=FALSE, bias.correct=FALSE,
                            newtonsteps=1, bias.correct.control=list(sd=FALSE, split=NULL, nsplit=1, vars_to_correct="Index_cyl") )
