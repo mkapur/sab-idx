@@ -14,14 +14,14 @@ build_Extrap <- function(Data_Geostat, strata.limits.input){
     
   } else if(grepl( paste0("R",1:5,collapse = "|"),strata.limits.input)[1]){
     ## build full strata limits object and subset as needed
-    strata.limits.full <- data.frame(
+ 
+       strata.limits.full <- data.frame(
       'STRATA' = c("R5","R4", "R3","R2","R1"),
       'west_border' = c(-180, -145, -135,-135,-135),
       'east_border' = c(-145, -135, -110,-110,-110),
       'north_border' = c(65, 65, 65,50,50),
       'south_border' = c(50, 50, 50, 36,26 ))
     strata.limits <- subset(strata.limits.full, STRATA %in% as.factor(strata.limits.input))
-    
     ## VAST-type input
   } else if(class(strata.limits.input) == "string" & !grepl( paste0("R",1:5,collapse = "|"),strata.limits)[1]){
     stop("not yet ready to deal with a regional de & signation for the strata limits; use basic VAST instead")
