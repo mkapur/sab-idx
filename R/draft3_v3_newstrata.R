@@ -18,7 +18,7 @@ list.files(sourceDir, pattern = paste(c("*.Rdata","*.RData"), collapse = "|"), f
 DateFile <- paste0(RootFile,Sys.Date(),"newStrata_",basename(sourceDir)); dir.create(DateFile)
 
 n_x = 500
-## Custom Strata ----
+## Custom Strata [Only need to do this once] ----
 strata.limits.full <- data.frame(
   'STRATA' = c("R5","R4", "R3","R2","R1"),
   'west_border' = c(-180, -145, -135,-135,-135),
@@ -54,13 +54,14 @@ Extrapolation_List <-
       'Area_km2' = rep(4, nrow(Data_Geostat))
     )
   )
+save(Extrapolation_List, file = paste0(DateFile,"/Extrapolation_List.Rdata"))
 
 png(paste0(DateFile,"/Extrapolation_List.png"), width = 8, height = 6, units = 'in', res = 520)
 plot( Extrapolation_List )
 dev.off()
 
 
-## Make spatial list ----
+
 Spatial_List <- make_spatial_info( n_x=500, Lon=Data_Geostat[,'Lon'], 
                                    Lat=Data_Geostat[,'Lat'], 
                                    Extrapolation_List=Extrapolation_List,
@@ -71,6 +72,7 @@ Spatial_List <- make_spatial_info( n_x=500, Lon=Data_Geostat[,'Lon'],
 png(paste0(DateFile,"/Spatial_List.png"), width = 8, height = 6, units = 'in', res = 520)
 plot( Spatial_List ) 
 dev.off()
+save(Spatial_List, file = paste0(DateFile,"/Spatial_List.Rdata"))
 
 
 # Plot details
@@ -81,7 +83,7 @@ Year_Set <- min(Data_Geostat[,'Year']):max(Data_Geostat[,'Year'])
 
 
 ## no EnumK here because no 0 encounter
-
+source("./R/vastOptions.R")
 # Make catchability matrix (Q_i) ----
 # The resulting Q_ik will have n-1 columns, with baseQ excluded.
 if( length(unique(Data_Geostat[,'Survey']))==1  |
@@ -94,9 +96,9 @@ if( length(unique(Data_Geostat[,'Survey']))==1  |
 }
 head(Q_ik) ## should have ncol == fleets-1
 
-# Plot location of data
 
-source("./R/vastOptions.R")
+
+
 ## from CC version
 TmbData <- VAST::make_data(
   #"X_itp"=X_itp, 
@@ -120,36 +122,27 @@ TmbData <- VAST::make_data(
 save(TmbData, file = paste0(DateFile,"/TmbData.Rdata"))
 
 
-Obj <- TmbList$Obj ## loaded from previous
+## Load and Modify input pars ----
+# Make TMB model, becomes LIST
+TmbList <- make_model("build_model"=TRUE, "TmbData"=TmbData, "RunDir"=DateFile, 
+                      "Version"=Version, "RhoConfig"=RhoConfig, 
+                      "loc_x"=Spatial_List$loc_x, "Method"=Method, "TmbDir"=getwd())
 
-mle_params <- Obj$env$parList() ## need this from previous model run; it is inside Save.Rdata
-## OBJ derives from TmbList which is a make_model object.
+save(TmbList, file = paste0(DateFile,"/TmbList.Rdata"))
 
-# new_obj <- MakeADFun(data, parameters = mle_params) ## will rerun thru derived quantities AT mle, no need to refit
-new_obj <-  make_model(
-  # Parameters = mle_params,
-  "build_model" = TRUE,
-  "TmbData" = TmbData,
-  "RunDir" = DateFile,
-  "Version" = Version,
-  "RhoConfig" = RhoConfig,
-  "loc_x" = Spatial_List$loc_x,
-  "Method" = Method,
-  "TmbDir" = getwd()
-)
-# mle_params_change <- mle_params
-# mle_params_change[1] <- 5
-# quantitites_changes <- Obj$env(mle_params_change)
+## Extract the OBJ from the model
+new_obj <-  TmbList[["Obj"]]  
+  
 
-
-Obj2 <- new_obj[["Obj"]]
-Obj2$par['lambda2_k'] ## should not be NA or zero
-Obj2$par['lambda1_k'] 
-# Obj$par['gamma1_k'] 
+# new_obj$Parameters[['lambda2_k']] ## should be zero at this point
+# 
+# ## manually fill in MLEs from previous regional model
+# new_obj$Parameters <- mle_params
 
 Opt2 <-
   TMBhelper::fit_tmb(
-    obj = Obj2,
+    startpar = Save$Opt$par, ## from pre-ex run
+    obj = new_obj,
     lower = new_obj[["Lower"]],
     upper = new_obj[["Upper"]],
     newtonsteps = 1,

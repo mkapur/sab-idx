@@ -399,6 +399,8 @@ Save <- list("Opt"=Opt,
              'Obj' = Obj)
 save(Save, file=paste0(DateFile,"Save_original.RData"))
 
+##Plots----
+
 plot_data( Extrapolation_List=Extrapolation_List, Spatial_List=Spatial_List, 
            Data_Geostat=Data_Geostat, PlotDir=DateFile, 
            Plot1_name="Data_and_knots.png", Plot2_name="Data_by_year.png", col="red")
@@ -434,9 +436,19 @@ plot_residuals( Lat_i=Data_Geostat[,'Lat'], Lon_i=Data_Geostat[,'Lon'],
                 extrapolation_list = Extrapolation_List,
                 TmbData=TmbData, Report=Report, Q=Q, savedir=DateFile, spatial_list=Spatial_List )
 
-# Plot density
-plot_maps( plot_set=3, Report=Report, PlotDF=MapDetails_List[["PlotDF"]], 
-           working_dir=DateFile, Year_Set=Year_Set )
+projargs_plot = "+proj=utm +datum=WGS84 +units=km +zone=3"
+#projargs_plot = "+proj=moll +lon_0=-150 +datum=WGS84 +units=km"
+#projargs_plot = "+proj=natearth +lon_0=-180 +datum=WGS84 +units=km"
+plot_maps(
+  plot_set = 3,
+  Report = Report,
+  PlotDF = MapDetails_List[["PlotDF"]],
+  working_dir = NA,
+  Year_Set = Year_Set,
+  Years2Include = (1:length(Year_Set))[Year_Set >1994 & Year_Set %%5==0],
+  projargs = projargs_plot,
+  country = c("united states of america", "canada", "mexico", "russia", 'japan')
+)
 
 ## plot easting-northing shifts
 #To plot effective area occupied, please re-run with Options['Calculate_effective_area']=1
