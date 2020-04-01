@@ -4,41 +4,58 @@ require(reshape2)
 require(mapdata)
 cbbPalette <- c("#000000", "#009E73", "#e79f00", "#9ad0f3", "#0072B2", "#D55E00", 
                 "#CC79A7", "navy", "#F0E442" )
-
+load("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2020-01-23_nx=500_Triennial_WCGBTS_BCs_BCo_AK_DOM_LL_GOA_baseQ=AK_DOM_LL1980_2018/Data_Geostat.Rdata")
 ## reboot of jim code showing survey regions and sample sizes [he used base] ----
 usa <- map_data("world")
+mgmtLims <- data.frame(ymax = c(65,65, 49),
+                       ymin = c(49,49, 30), 
+                       xmax = c(-180,-134, -115), 
+                       xmin = c(-134,-115, -132))
 
-# plist<-list()
-# plist[[1]] <- ggplot() +
-#   geom_polygon(data = usa, aes(x = long, y = lat, group = group), fill = 'grey55') +
-#   coord_quickmap(clip = 'off') +
-#   scale_x_continuous(expand = c(0,0), limits = c(-180,-110), breaks = seq(-180,-120,10), labels = paste(seq(-180,-120,10), "°W")) +
-#   scale_y_continuous(expand = c(0,0), limits = c(30,75), breaks = seq(30,75,10), labels =  paste(seq(30,75,10), "°N"))  +
-#   theme_minimal() +
-#   theme(panel.grid = element_blank(),
-#         legend.position = 'left',
-#         legend.text = element_text(size = 10)) +
-#   guides(colour = guide_legend(override.aes = list(alpha=1))) +
-#   geom_point(data = Data_Geostat, alpha = 0.1,
-#              aes(x = Lon,  y = Lat, color = factor(Survey))) +
-#   # scale_color_manual(values = c('orchid','gold',cbbPalette)) +
-#   labs(x = 'Longitude', y = 'Latitude', color = 'Survey')
-# plist[[2]] <- Data_Geostat %>%
-#   group_by(Survey, Year) %>%
-#   summarise(n = n()) %>%
-#   ggplot(., aes(x = Year, y = n, fill = Survey)) +
-#   theme_minimal() +
-#   theme(legend.position = 'none') +
-#   # geom_point(size = 4) +
-#   geom_bar(stat = 'identity', position = 'stack')+
-#   # scale_y_continuous(limits = c(0,1100), breaks = seq(0,1000,1000)) +
-#   # scale_fill_manual(values = c('orchid','grey22',cbbPalette)) +
-#   labs(x = 'Year', y = 'Sample Size', color = 'Survey')
+plist<-list()
+plist[[1]] <- ggplot() +
+  geom_polygon(data = usa, aes(x = long, y = lat, group = group), fill = 'grey55') +
+  coord_quickmap(clip = 'off') +
+  scale_x_continuous(expand = c(0,0), limits = c(-180,-110), breaks = seq(-180,-120,10), labels = paste(seq(-180,-120,10), "°W")) +
+  scale_y_continuous(expand = c(0,0), limits = c(30,75), breaks = seq(30,75,10), labels =  paste(seq(30,75,10), "°N"))  +
+  # theme_minimal() +
+  kaputils::theme_black() +
+  theme(panel.grid = element_blank(),
+        legend.position = 'left',
+        legend.text = element_text(size = 10)) +
+  geom_rect(data = mgmtLims, aes(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax),
+            fill =NA, size = 1, colour = 'red') + 
+  geom_label(aes( x = c(rep(-120,2),-145),
+                  y = c(40,55,55),
+                  label = c("Cal Curr.","BC","AK")),
+             size = 3) +
+  
+  guides(colour = guide_legend(override.aes = list(alpha=1))) +
+  geom_point(data = Data_Geostat, alpha = 0.01,
+             aes(x = Lon,  y = Lat, color = factor(Survey))) +
+  geom_label(aes( x = c(rep(-120,2),-145),
+                  y = c(40,55,55),
+                  label = c("Cal Curr.","BC","AK")),
+             size = 3) +
+  # scale_color_manual(values = c('orchid','gold',cbbPalette)) +
+  labs(x = 'Longitude', y = 'Latitude', color = 'Survey')
+plist[[2]] <- Data_Geostat %>%
+  group_by(Survey, Year) %>%
+  summarise(n = n()) %>%
+  ggplot(., aes(x = Year, y = n, fill = Survey)) +
+  # theme_minimal() +
+  kaputils::theme_black() +
+  theme(legend.position = 'none') +
+  # geom_point(size = 4) +
+  geom_bar(stat = 'identity', position = 'stack')+
+  # scale_y_continuous(limits = c(0,1100), breaks = seq(0,1000,1000)) +
+  # scale_fill_manual(values = c('orchid','grey22',cbbPalette)) +
+  labs(x = 'Year', y = 'Sample Size', color = 'Survey')
 
 
-# ggsave(plot = Rmisc::multiplot(plotlist = plist, cols = 1) ,
-#        file = "./figures/datamap_size.png",
-#        width = 5, height = 7, units = 'in', dpi = 440)
+ggsave(plot = Rmisc::multiplot(plotlist = plist, cols = 1) ,
+       file = "./figures/datamap_size-BLACK.png",
+       width = 5, height = 7, units = 'in', dpi = 440)
 
 ## EDA on effort metrics
 # Data_Geostat %>% group_by(State) %>%
@@ -200,7 +217,7 @@ custnames <- c(paste0('VAST ',c('California Current','British Columbia',
                'Triennial','WCGBTS')[fleetSel]
 
 
-
+## compare_all plot ----
 rbind(vastc,assc) %>%
   filter(Fleet2 %in% c('WC','BC', 'AK')[1:3]) %>%
   filter(Fleet %in% c("California_current","British_Columbia",
@@ -212,8 +229,9 @@ rbind(vastc,assc) %>%
   # filter(Fleet %in% c("British_Columbia","Filter_BCTrawl")) %>%
   ggplot(., aes(x = Year, y =Estimate_metric_tons, col = Fleet, linetype = Fleet)) +
   theme_bw()+
+  # kaputils::theme_black()+
   theme(panel.grid = element_blank(),
-        legend.position = 'bottom',
+        legend.position = 'right',
         legend.text = element_text(size = 12),
   strip.text.x = element_text(
     size = 16
@@ -231,15 +249,19 @@ rbind(vastc,assc) %>%
        title = '')+ #,
        # subtitle = 'BC + WC have been multiplied by 1000') +
   geom_line(lwd = 1) +
-  geom_ribbon(aes(ymin = lci, ymax = uci), 
+  geom_ribbon(aes(ymin = lci, ymax = uci, fill = Fleet), 
               alpha = 0.15, col = 'grey',show.legend = FALSE) +
   facet_wrap(~Fleet2, scales = 'free_y', ncol = 3)
 
 
   ggsave(plot = last_plot(),
        # file = paste0("./figures/",Sys.Date(),"_idx_comparison.png"),
-       file = paste0(DateFile,"/compare_all.png"),
+       file = paste0(DateFile,"/compare_all-BLACK.png"),
        height = 8, width = 12, unit='in',dpi = 320)
+  
+  
+  
+  
 
 vastc %>% group_by(Fleet) %>% summarise(mean(exp(SD_log)))                          
 # ## Prettier index plot ----
@@ -249,18 +271,19 @@ vastc %>%
 ggplot(.,
          aes(x = Year, y = Estimate_metric_tons, col = Fleet)) +
     theme_bw()+
+  # kaputils::theme_black() +
 
     scale_color_manual(values = cbbPalette) +
     labs(x = 'Year', y = 'Estimate (mt)', title = paste0('VAST-Standardized Indices')) +
     geom_line(lwd = 0.9)+
     # geom_point(pch = 1, cex = 3) +
     geom_ribbon(aes(ymin = lci,
-                    ymax = uci),
+                    ymax = uci,  fill = Fleet),
                 alpha = 0.2,
                 show.legend = FALSE)
 #   
-# ggsave(plot = last_plot(), file = paste0(DateFile,"Index-Biomass2.png"), 
-#        height = 6, width = 8, unit='in',dpi = 360)
+ggsave(plot = last_plot(), file = paste0(DateFile,"Index-Biomass2-BLACK.png"),
+       height = 6, width = 8, unit='in',dpi = 360)
 
 
 # source("C:/Users/maia kapur/Dropbox/kaputils/R/theme_mk.R")
