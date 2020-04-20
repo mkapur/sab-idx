@@ -156,7 +156,9 @@ assc <- assc %>%
   mutate(uci=NA, lci = NA)
 
 ## see line 81 here for conv https://github.com/James-Thorson-NOAA/FishStatsUtils/blob/master/R/plot_index.R
-vastc <- read.csv(paste0(DateFile,"Table_for_SS3.csv")) %>%
+# vastc <- 
+vastc <- read.csv("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2020-01-23_nx=500_Triennial_WCGBTS_BCs_BCo_AK_DOM_LL_GOA_baseQ=AK_DOM_LL1980_2018/Table_for_SS3.csv") %>%
+# read.csv(paste0(DateFile,"Table_for_SS3.csv")) %>%
                     mutate(TYPE = 'Abundance', Source = 'VAST',
                            lci = Estimate_metric_tons-SD_mt,
                            uci = Estimate_metric_tons+SD_mt) %>%
@@ -216,6 +218,7 @@ custnames <- c(paste0('VAST ',c('California Current','British Columbia',
                'AK Domestic Longline', "AK Gulf Trawl", 'BC Offshore Standardized','BC Synoptic Trawl','BC Trap Stratified',
                'Triennial','WCGBTS')[fleetSel]
 
+genPal <- c('brown','dodgerblue','goldenrod','grey22')
 
 ## compare_all plot ----
 rbind(vastc,assc) %>%
@@ -227,7 +230,8 @@ rbind(vastc,assc) %>%
                       "Filter_BCTrawl","Filter_StRS", "AKSHLF",  "NWCBO")[fleetSel]) %>%
   filter(Year < 2019) %>%
   # filter(Fleet %in% c("British_Columbia","Filter_BCTrawl")) %>%
-  ggplot(., aes(x = Year, y =Estimate_metric_tons, col = Fleet, linetype = Fleet)) +
+  ggplot(., aes(x = Year, y = Estimate_metric_tons, 
+                col = Fleet, linetype = Fleet)) +
   theme_bw()+
   # kaputils::theme_black()+
   theme(panel.grid = element_blank(),
@@ -235,28 +239,32 @@ rbind(vastc,assc) %>%
         legend.text = element_text(size = 12),
   strip.text.x = element_text(
     size = 16
-  )) +
-  # scale_y_continuous(limits = c(0,2e6))+
+  )) +  
+  geom_line(lwd = 1) +
+  geom_ribbon(aes(ymin = lci, ymax = uci, fill = Fleet), 
+              alpha = 0.15, col = 'grey',
+              show.legend = FALSE) +
   scale_x_continuous(limits = c(1980,2018),
                      breaks = seq(1980,2020,10)) +
+  scale_fill_manual(values = c(rep('blue',3), 'dodgerblue3',
+                               cbbPalette),
+                    labels = c(custnames)) +
   scale_color_manual( values = c(rep('blue',3), 'dodgerblue3',
                                  cbbPalette),
                       labels = c(custnames)) +
   scale_linetype_manual(values = c(rep('solid',4),
                                    rep('dashed',40)),
-  labels = c(custnames)) +
+                        labels = c(custnames)) +
   labs(x = 'Year', y = 'Estimate (mt)', color = "", linetype = "",
-       title = '')+ #,
-       # subtitle = 'BC + WC have been multiplied by 1000') +
-  geom_line(lwd = 1) +
-  geom_ribbon(aes(ymin = lci, ymax = uci, fill = Fleet), 
-              alpha = 0.15, col = 'grey',show.legend = FALSE) +
+       title = '',
+       subtitle = 'BC&AK assessment vals have been multiplied by 1000; input dat was div by 1000') +
+
   facet_wrap(~Fleet2, scales = 'free_y', ncol = 3)
 
 
   ggsave(plot = last_plot(),
        # file = paste0("./figures/",Sys.Date(),"_idx_comparison.png"),
-       file = paste0(DateFile,"/compare_all-BLACK.png"),
+       file = paste0(DateFile,"/compare_all-update.png"),
        height = 8, width = 12, unit='in',dpi = 320)
   
   
