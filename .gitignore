@@ -2,7 +2,7 @@
 *writing/*
 *presentations/*
 *.pper
-*.Rproj.*
+*Rproj*
 .Rproj.user/2B1B628E/sources/prop/INDEX
 .Rproj.user/2B1B628E/sources/prop/D57FD08
 .Rproj.user/2B1B628E/sources/prop/C9A3E4B0
