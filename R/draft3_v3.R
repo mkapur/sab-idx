@@ -7,7 +7,7 @@ library(mapdata)
 library(ggplot2)
 
 # Directories ----
-comp.name <- c("mkapur",'maia kapur')[2]
+comp.name <- c("mkapur",'maia kapur')[1]
 RootFile <- paste0( "C:/Users/",comp.name ,"/Dropbox/UW/sab-idx/runs/") 
 DataFile  <- paste0( "C:/Users/",comp.name ,"/Dropbox/UW/sab-idx/data/" ) #paste0( RootFile,"Data/")
 
