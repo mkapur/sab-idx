@@ -1,5 +1,5 @@
 
-# remotes::install_github("james-thorson/VAST@749177f30e423f2160a24f1c81326b75925d4226") ## This is a commit on 13 Jan
+remotes::install_github("james-thorson/VAST@749177f30e423f2160a24f1c81326b75925d4226") ## This is a commit on 13 Jan
 
 library(VAST)
 library(TMB)
@@ -296,7 +296,7 @@ Extrapolation_List <- make_extrapolation_info( Region=Region, strata_to_use=c('S
 #   Extrapolation_List <-  make_extrapolation_info( Region=Region,
 #                                                   observations_LL=observations_LL, zone=Zone, create_strata_per_region=create_strata_per_region )
 # }
-
+save(Extrapolation_List, file = paste0(DateFile,"/Extrapolation_List.Rdata"))
 ## Make spatial list ----
 Spatial_List <- make_spatial_info( n_x=n_x, Lon=Data_Geostat[,'Lon'], 
                                    Lat=Data_Geostat[,'Lat'], 
@@ -311,6 +311,8 @@ save(Spatial_List, file = paste0(DateFile,"/Spatial_List.Rdata"))
 MapDetails_List <- make_map_info( "Region"="Other", 
                                   "spatial_list"=Spatial_List, 
                                   "Extrapolation_List"=Extrapolation_List )
+save(MapDetails_List, file = paste0(DateFile,"/MapDetails_List.Rdata"))
+
 Year_Set <- min(Data_Geostat[,'Year']):max(Data_Geostat[,'Year'])
 
 # Exclude surveys without any encounters
