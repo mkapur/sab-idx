@@ -156,9 +156,9 @@ assc <- assc %>%
   mutate(uci=NA, lci = NA)
 
 ## see line 81 here for conv https://github.com/James-Thorson-NOAA/FishStatsUtils/blob/master/R/plot_index.R
-# vastc <- 
-vastc <- read.csv("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2020-01-23_nx=500_Triennial_WCGBTS_BCs_BCo_AK_DOM_LL_GOA_baseQ=AK_DOM_LL1980_2018/Table_for_SS3.csv") %>%
-# read.csv(paste0(DateFile,"Table_for_SS3.csv")) %>%
+vastc <-
+# vastc <- read.csv("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2020-01-23_nx=500_Triennial_WCGBTS_BCs_BCo_AK_DOM_LL_GOA_baseQ=AK_DOM_LL1980_2018/Table_for_SS3.csv") %>%
+read.csv(paste0(DateFile,"Table_for_SS3.csv")) %>%
                     mutate(TYPE = 'Abundance', Source = 'VAST',
                            lci = Estimate_metric_tons-SD_mt,
                            uci = Estimate_metric_tons+SD_mt) %>%
