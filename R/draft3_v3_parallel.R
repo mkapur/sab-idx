@@ -1,5 +1,5 @@
 
-remotes::install_github("james-thorson/VAST@749177f30e423f2160a24f1c81326b75925d4226") ## This is a commit on 13 Jan
+# remotes::install_github("james-thorson/VAST@749177f30e423f2160a24f1c81326b75925d4226") ## This is a commit on 13 Jan
 
 library(VAST)
 library(TMB)
@@ -10,7 +10,7 @@ library(mapdata)
 library(ggplot2)
 
 # Directories ----
-comp.name <- c("mkapur",'maia kapur')[1]
+comp.name <- c("mkapur",'maia kapur')[2]
 RootFile <- paste0( "C:/Users/",comp.name ,"/Dropbox/UW/sab-idx/runs/") 
 DataFile  <- paste0( "C:/Users/",comp.name ,"/Dropbox/UW/sab-idx/data/" ) #paste0( RootFile,"Data/")
 
@@ -61,257 +61,257 @@ if( Spatial_Smoother=="Smoothed_Index" ) RhoConfig = c("Beta1"=0, "Beta2"=0, "Ep
 if( Spatial_Smoother=="Spatiotemporal" ) RhoConfig = c("Beta1"=3, "Beta2"=3, "Epsilon1"=2, "Epsilon2"=2) # Pointwise random walk (epsilon is RW, Beta1 is constant for all years)
 if( Spatial_Smoother=="Spatiotemporal_AR" ) RhoConfig = c("Beta1"=0, "Beta2"=0, "Epsilon1"=3, "Epsilon2"=3) # Pointwise autocorrelation (beta is freely estimated in each year)
 
-# Save options for future records
-Record <- ThorsonUtilities::bundlelist( c("Version","Method","grid_size_km","n_x","BC_catchability","BaseQ","Use_REML","fine_scale",
-                                          "FieldConfig","RhoConfig","OverdispersionConfig", "Year_Range",
-                                          "ObsModel","Aniso","fine_scale","Options", "create_strata_per_region") )
-
-save( Record, file=paste0(DateFile,"Record.RData"))
-
-## Create DATA_CPUE ----
-## Ensure this roughly matches what is built for VAST WC.
-Data_CPUE <- data.frame(stringsAsFactors = FALSE)
-if( "WCGBTS" %in% Surveys_to_include ){
-  
-  ## using my data (older)
-  # WCGBTS <-  read.csv( paste0(DataFile,"Catch__NWFSC.Combo_2019-03-15.csv")) #read.csv( paste0(DataFile,"SurveyHaulAndCatchData03To14--HaulFishCatchData03To14.csv"), skip=8, header=TRUE)
-  # WCGBTS$AreaSwept_km2 <- WCGBTS[,"Area_Swept_ha"]*0.01
-  # Data1 <-  ThorsonUtilities::rename_columns( Data1[,c('Year','Latitude_dd','Longitude_dd','AreaSwept_km2','total_catch_wt_kg',"Vessel")], 
-  # newname=c('Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel"))
-  
-  ## using Kelli's data
-  load(paste0("C:/Users/", comp.name,"/Dropbox/UW/sab-idx/runs/sabWCVAST/WCGBTS/DatabaseSave.Rdata"))
-  WCGBTS <- Database  #read.csv( paste0(DataFile,"SurveyHaulAndCatchData03To14--HaulFishCatchData03To14.csv"), skip=8, header=TRUE)
-  Data1 <- WCGBTS %>% select(Year, Lat, Lon, AreaSwept_km2, Catch_KG, Vessel)
-  Data1$Vessel <- as.character(Data1$Vessel)
-  Data1$AreaSwept_km2
-  # Data1 <- WCGBTS[,c('Trawl_id','Year','Latitude_dd','Longitude_dd','AreaSwept_km2','total_catch_wt_kg',"Vessel")]
-  rm(WCGBTS)
-  
-  Data1 <-  cbind("Survey"="WCGBTS", "Region"="CC", Data1)
-  Data_CPUE <- rbind( Data_CPUE, Data1 )
-  rm(Data1)
-}
-
-# Load triennial
-# Has some problem with multiple replicated samples
-## There ARE zeroes here already...
-if( "Triennial" %in% Surveys_to_include ){
-  ThorsonUtilities::LoadFn( paste0(DataFile,"Catch__Triennial_2019-03-15.Rda"))
-  Data2 <- Out
-  rm(Out)
-  Data2 <- cbind(Data2, "AreaSwept_km2"= Data2[,"Area_Swept_ha"]*0.01) #Data2[,'DISTANCE_FISHED']*Data2[,'NET_WIDTH']/1000 )
-  Data2 <- ThorsonUtilities::rename_columns( Data2[,c('Year','Latitude_dd','Longitude_dd','AreaSwept_km2','total_catch_wt_kg',"Vessel")], 
-                                             newname=c('Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel"))
-  ## Create timeblocking
-  Triennial_late <- subset(Data2, Year > 1995) %>% mutate(Survey = 'Triennial_late', Region = "CC")
-  Triennial_early <- subset(Data2, Year <= 1995) %>% mutate(Survey = 'Triennial_early', Region = "CC")
-  Data_CPUE = rbind( Data_CPUE, Triennial_late,  Triennial_early)
-  rm(Data2)
-}
-
-# Load BC trap survey strs
-if( "BCs" %in% Surveys_to_include ){
-  # Exclude PCOD monitoring survey, which is non-random
-  # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
-  BCs <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))  %>% 
-    filter(START_LONGITUDE <= 0 & !is.na(CPUE_TRAPS) & !is.na(TOTAL_SABLE_WEIGHT) & 
-             SABLE_SET_TYPE == 'StRS') %>%
-    ## calc area including soak time
-    mutate(AreaSwept_km2=CPUE_TRAPS*DURATION_MINUTES/10000, ## to put on same scale as others
-           TRIP_ID2 = paste(SET_YEAR,START_LATITUDE, START_LONGITUDE))
-  
-  
-  Data3 <- ThorsonUtilities::rename_columns( BCs[,c("TRIP_ID2", 'SABLE_SET_TYPE','SET_YEAR','START_LATITUDE','START_LONGITUDE','AreaSwept_km2',"TOTAL_SABLE_WEIGHT","VESSEL_ID")],
-                                             newname=c("TRIP_ID", 'Survey','Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel")) %>%
-    # complete(Year,nesting(TRIP_ID,Lat,Lon),
-    #          fill = list(Catch_KG = 0.0)) %>%
-    mutate(Survey = 'BC_StRS', Region = 'BC') %>% select(-TRIP_ID)
-  Data_CPUE <- rbind( Data_CPUE, Data3 )
-  rm(Data3);  rm(BCs)
-}
-
-# Load BC offshore standardized
-if( "BCo" %in% Surveys_to_include ){
-  # Exclude PCOD monitoring survey, which is non-random
-  # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
-  BCo <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))  %>% 
-    filter(START_LONGITUDE <= 0 & !is.na(CPUE_TRAPS) & !is.na(TOTAL_SABLE_WEIGHT) & 
-             SABLE_SET_TYPE == 'OFFSHORE STANDARDIZED') %>%
-    ## calc area including soak time
-    mutate(AreaSwept_km2=CPUE_TRAPS*DURATION_MINUTES/10000, ## to put on same scale as others
-           TRIP_ID2 = paste(SET_YEAR,START_LATITUDE, START_LONGITUDE))
-  
-  
-  Data3b <- ThorsonUtilities::rename_columns( BCo[,c("TRIP_ID2", 'SABLE_SET_TYPE','SET_YEAR','START_LATITUDE','START_LONGITUDE','AreaSwept_km2',"TOTAL_SABLE_WEIGHT","VESSEL_ID")],
-                                              newname=c("TRIP_ID", 'Survey','Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel")) %>%
-    # complete(Year,nesting(TRIP_ID,Lat,Lon),
-    #          fill = list(Catch_KG = 0.0)) %>%
-    mutate(Survey = 'BC_OffStd', Region = 'BC') %>% select(-TRIP_ID)
-  Data_CPUE <- rbind( Data_CPUE, Data3b )
-  rm(Data3b);  rm(BCo)
-}
-## BC Trawl survey
-if( "BCt" %in% Surveys_to_include ){
-  # Exclude PCOD monitoring survey, which is non-random
-  # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
-  BCt <- read.csv(paste0(DataFile,"/BC/BC_trawl_survey_sable_data.Oct312019.csv"))  %>% 
-    filter(LONGITUDE <= 0 & !is.na(TOW_LENGTH_M) & !is.na(CATCH_WEIGHT) ) %>%
-    mutate("AreaSwept_km2"=as.numeric(as.character(TOW_LENGTH_M))/1000)
-  # BCt <- cbind( BCt,  #/1e6) ## to scale effort
-  # BCt <- BCt[-which(BCt[,'ACTIVITY_DESC']=="HECATE STRAIT PCOD MONITORING TRAWL SURVEY"),]
-  
-  Data3a <- ThorsonUtilities::rename_columns( BCt[,c("SURVEY_ID", 'SURVEY_DESC','YEAR','LATITUDE','LONGITUDE',
-                                                     'AreaSwept_km2',"CATCH_WEIGHT","VESSEL_NAME")], 
-                                              newname=c("TRIP_ID", 'Survey','Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel")) %>% 
-    mutate(Survey = 'BC_TRAWL', Region = 'BC')%>% select(-TRIP_ID)
-  rm(BCt)
-  Data_CPUE <-  rbind( Data_CPUE, Data3a )
-  rm(Data3a)
-}
-
-if( "AK_DOM_LL" %in% Surveys_to_include ){
-  # "Your data looks pretty good for the longline survey"
-  ## slow to make the merge; did once and save.
-  # AK_DOM_LL_Loc <-  read.csv( paste0(DataFile,"AK/LLData/catch_summary_view_with_nulls.csv"), header=TRUE,skip = 6) %>%
-  #   filter(Year > 1989)
-  # ## these have a small fudge factor leading to many dupes. get a mean survey location for each.
-  # AK_DOM_LL0 <-  read.csv( paste0(DataFile,"AK/LLData/SurveyCatchAnalysis.csv"), header = TRUE)
-  # names(AK_DOM_LL0)[1] <- 'Year'
-  # 
-  # # ## get station numbers from dom LL
-  # AK_DOM_LL <- AK_DOM_LL_Loc %>% group_by(Station.Number,Year) %>% dplyr::summarise(meanLat = mean(Start.Latitude..DD.),
-  #                                                                                   meanLon = mean(Start.Longitude..DD.)) %>%
-  #   select(Station.Number,Year, meanLat, meanLon) %>%
-  #   merge(AK_DOM_LL0,.,
-  #         by = c("Year",'Station.Number'),  all.y = TRUE)
-  # # ## overwrite NA weights to zero
-  # AK_DOM_LL$Total.Weight..kg.[is.na( AK_DOM_LL$Total.Weight..kg.)] <- 0
-  # write.csv(AK_DOM_LL, file = paste0(DataFile,"AK/LLData/merged_AK_DOM_LL.csv") )
-  
-  ## manually add vessels
-  # the domestic LL survey for 1989-1993 was the vessel 'Ocean Prowler', 
-  ## starting in 1994-present the 'Alaskan Leader' surveyed even years 
-  ## and the 'Ocean Prowler' does odd years.
-  
-  Data5 <- read.csv(paste0(DataFile,"AK/LLData/merged_AK_DOM_LL.csv") )%>% 
-    mutate(AreaSwept_km2 = 0.01, Vessel = ifelse(Year < 1994, "Ocean Prowler", 
-                                                 ifelse(Year %% 2 == 0, 
-                                                        "Alaskan Leader",  "Ocean Prowler"  ))) %>%
-    select(c('Year','meanLat','meanLon','AreaSwept_km2','Total.Weight..kg.','Vessel'))
-  
-  # Data5 = FishData::add_missing_zeros( data_frame=GOA, Method=ZeroMethod, if_multiple_records=ifelse(ZeroMethod=="Slow",'Error','Combine'),
-  # unique_sample_ID_colname="TowID", sample_colname="WEIGHT..KG.", species_subset=Species, species_colname="COMMON.NAME" )
-  Data5 <- ThorsonUtilities::rename_columns( Data5[,c('Year','meanLat','meanLon','AreaSwept_km2','Total.Weight..kg.',"Vessel")], 
-                                             newname=c('Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel"))  %>%
-    mutate(Survey = 'AK_DOM_LL', Region = 'AK')
-  Data5$Lon <- ifelse(  Data5$Lon > 0,   Data5$Lon*-1,  Data5$Lon) ## otherwise things in japan
-  
-  # AK_DOM_late <- subset(Data5, Year > 2009) %>% mutate(Survey = 'AK_DOM_late', "Region" = "AK")
-  # AK_DOM_early <- subset(Data5, Year <= 2009) %>% mutate(Survey = 'AK_DOM_early', "Region" = "AK")
-  
-  Data_CPUE <- rbind( Data_CPUE, Data5) #AK_DOM_early, AK_DOM_late )
-  # Data_CPUE <- rbind( Data_CPUE,  AK_DOM_early, AK_DOM_late )
-  
-  rm(Data5)
-  
-}
-# Load GOA trawl -- these already have zeros
-if( "GOA" %in% Surveys_to_include ){
-  
-  ## DH indicated to use <700m and drop 1984, 1987 and split at 1993
-  ALL_GOA <- read.csv( paste0(DataFile,"AK/race_cpue_by_haul.csv"), header=TRUE ) %>% 
-    filter( Gear.Depth <= 500 & !(Year %in% c(1984,1987)) ) 
-  names(ALL_GOA) <- toupper(names(ALL_GOA))
-  
-  GOA <-  ALL_GOA %>%
-    filter(SURVEY == 'GOA') %>%
-    cbind( ., "Vessel" = as.factor(.$VESSEL.NUMBER),
-           "TowID"=paste(.[,'YEAR'],.[,'STARTING.LATITUDE..DD.'],.[,'STARTING.LONGITUDE..DD.'],sep="_"), 
-           "AreaSwept_km2"=0.01) #0.01
-  AI <- ALL_GOA %>%
-    filter(SURVEY == 'AI') %>%
-    cbind( ., "Vessel" = as.factor(.$VESSEL.NUMBER),
-           "TowID"=paste(.[,'YEAR'],.[,'STARTING.LATITUDE..DD.'],.[,'STARTING.LONGITUDE..DD.'],sep="_"), 
-           "AreaSwept_km2"=0.01) #0.01
-  
-  Data4g <- GOA %>% select(c("YEAR","STARTING.LATITUDE..DD.","STARTING.LONGITUDE..DD.","AreaSwept_km2","WEIGHT..KG.","Vessel"))
-  Data4a <- AI %>% select(c("YEAR","STARTING.LATITUDE..DD.","STARTING.LONGITUDE..DD.","AreaSwept_km2","WEIGHT..KG.","Vessel"))
-  
-  rm(GOA); rm(AI)
-  Data4g <- ThorsonUtilities::rename_columns( Data4g[,c('YEAR','STARTING.LATITUDE..DD.','STARTING.LONGITUDE..DD.','AreaSwept_km2','WEIGHT..KG.',"Vessel")],
-                                              newname=c('Year','Lat','Lon','AreaSwept_km2','Catch_KG','Vessel'))
-  Data4a <- ThorsonUtilities::rename_columns( Data4a[,c('YEAR','STARTING.LATITUDE..DD.','STARTING.LONGITUDE..DD.','AreaSwept_km2','WEIGHT..KG.',"Vessel")],
-                                              newname=c('Year','Lat','Lon','AreaSwept_km2','Catch_KG','Vessel'))
-  Data4a$Lon <- ifelse(  Data4a$Lon > 0,   Data4a$Lon*-1,  Data4a$Lon) ## otherwise things in japan
-  Data4g$Lon <- ifelse(  Data4g$Lon > 0,   Data4g$Lon*-1,  Data4g$Lon) ## otherwise things in japan
-  
-  
-  ## Create timeblocking -- 2010 was a growth morph year break
-  # GOA_mid <- subset(Data4, Year > 1993 & Year < 2010) %>% mutate(Survey = 'GOA_mid', Region = "GOA")
-  GOA_late <- subset(Data4g, Year > 1993 ) %>% mutate(Survey = 'GOA_late', Region = "GOA")
-  GOA_early <- subset(Data4g, Year <= 1993 ) %>% mutate(Survey = 'GOA_early', Region = "GOA")
-  AI_late <- subset(Data4a, Year > 1993 ) %>% mutate(Survey = 'AI_late', Region = "AI")
-  AI_early <- subset(Data4a, Year <= 1993 ) %>% mutate(Survey = 'AI_early', Region = "AI")
-  
-  
-  Data_CPUE <- rbind( Data_CPUE, GOA_early, GOA_late, AI_late, AI_early)
-  rm(Data4g);rm(Data4a); rm(GOA_late); rm(GOA_early);rm(AI_late); rm(AI_early)
-}
-
-Data_Geostat <- Data_CPUE[which(Data_CPUE$Year>=Year_Range[1] & Data_CPUE$Year<=Year_Range[2]),]
-
-## RESCALE THE DATA SO IT IS NOT HUGE
-Data_Geostat$Catch_KG <- Data_Geostat$Catch_KG/1000 #(Data_Geostat$Catch_KG - mean(Data_Geostat$Catch_KG))/sd(Data_Geostat$Catch_KG)
-Data_Geostat <- na.omit( Data_Geostat )
-save(Data_Geostat, file = paste0(DateFile,"/Data_Geostat.Rdata"))
-
-Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(Year))
-
-Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(Catch_KG), max(Catch_KG)) ## should be 0 to pos
-Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(AreaSwept_km2), max(AreaSwept_km2)) ## should be positive
-Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(Year)) ## should be > Year_Range[1]
-
-Region <- NULL 
-## This is Thorson's -- Kelli had a way of pre-subsetting to have N/S embedded
-# if( TRUE ){
-if(any(c("WCGBTS","Triennial") %in% Surveys_to_include)) Region = c( Region, "California_current")
-if("BCs" %in% Surveys_to_include | "BCt" %in% Surveys_to_include) Region = c( Region, "British_Columbia" )
-if("GOA" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska" )
-if("GOA" %in% Surveys_to_include) Region = c( Region, "Aleutian_Islands" )
-
-if("EBS"  %in% Surveys_to_include) Region = c( Region, "Eastern_Bering_Sea" )
-if("AK_DOM_LL" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska", "Eastern_Bering_Sea" )
-
-Extrapolation_List <- make_extrapolation_info( Region=Region, strata_to_use=c('SOG','WCVI','QCS','HS','WCHG'),
-                                               zone=Zone, create_strata_per_region=create_strata_per_region )
-# }else{
-#   if(any(c("WCGBTS","Triennial") %in% Surveys_to_include)) Region = c( Region, "California_current")
-#   if("BCs" %in% Surveys_to_include | "BCt" %in% Surveys_to_include) Region = c( Region, "British_Columbia" )
-#   if("GOA" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska" )
-#   if("EBS" %in% Surveys_to_include) Region = c( Region, "Eastern_Bering_Sea" )
-#   if("AK_DOM_LL" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska", "Eastern_Bering_Sea" )
+# # Save options for future records
+# Record <- ThorsonUtilities::bundlelist( c("Version","Method","grid_size_km","n_x","BC_catchability","BaseQ","Use_REML","fine_scale",
+#                                           "FieldConfig","RhoConfig","OverdispersionConfig", "Year_Range",
+#                                           "ObsModel","Aniso","fine_scale","Options", "create_strata_per_region") )
+# 
+# save( Record, file=paste0(DateFile,"Record.RData"))
+# 
+# ## Create DATA_CPUE ----
+# ## Ensure this roughly matches what is built for VAST WC.
+# Data_CPUE <- data.frame(stringsAsFactors = FALSE)
+# if( "WCGBTS" %in% Surveys_to_include ){
 #   
-#   observations_LL <- Data_Geostat[ which(Data_Geostat[,'Region']=="BC"), c('Lat','Lon') ]
-#   Extrapolation_List <-  make_extrapolation_info( Region=Region,
-#                                                   observations_LL=observations_LL, zone=Zone, create_strata_per_region=create_strata_per_region )
+#   ## using my data (older)
+#   # WCGBTS <-  read.csv( paste0(DataFile,"Catch__NWFSC.Combo_2019-03-15.csv")) #read.csv( paste0(DataFile,"SurveyHaulAndCatchData03To14--HaulFishCatchData03To14.csv"), skip=8, header=TRUE)
+#   # WCGBTS$AreaSwept_km2 <- WCGBTS[,"Area_Swept_ha"]*0.01
+#   # Data1 <-  ThorsonUtilities::rename_columns( Data1[,c('Year','Latitude_dd','Longitude_dd','AreaSwept_km2','total_catch_wt_kg',"Vessel")], 
+#   # newname=c('Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel"))
+#   
+#   ## using Kelli's data
+#   load(paste0("C:/Users/", comp.name,"/Dropbox/UW/sab-idx/runs/sabWCVAST/WCGBTS/DatabaseSave.Rdata"))
+#   WCGBTS <- Database  #read.csv( paste0(DataFile,"SurveyHaulAndCatchData03To14--HaulFishCatchData03To14.csv"), skip=8, header=TRUE)
+#   Data1 <- WCGBTS %>% select(Year, Lat, Lon, AreaSwept_km2, Catch_KG, Vessel)
+#   Data1$Vessel <- as.character(Data1$Vessel)
+#   Data1$AreaSwept_km2
+#   # Data1 <- WCGBTS[,c('Trawl_id','Year','Latitude_dd','Longitude_dd','AreaSwept_km2','total_catch_wt_kg',"Vessel")]
+#   rm(WCGBTS)
+#   
+#   Data1 <-  cbind("Survey"="WCGBTS", "Region"="CC", Data1)
+#   Data_CPUE <- rbind( Data_CPUE, Data1 )
+#   rm(Data1)
 # }
-save(Extrapolation_List, file = paste0(DateFile,"/Extrapolation_List.Rdata"))
-## Make spatial list ----
-Spatial_List <- make_spatial_info( n_x=n_x, Lon=Data_Geostat[,'Lon'], 
-                                   Lat=Data_Geostat[,'Lat'], 
-                                   Extrapolation_List=Extrapolation_List,
-                                   DirPath=DateFile, Save_Results=FALSE, 
-                                   "knot_method"="grid", refine=FALSE, 
-                                   fine_scale=fine_scale )
-
-save(Spatial_List, file = paste0(DateFile,"/Spatial_List.Rdata"))
-
-# Plot details
-MapDetails_List <- make_map_info( "Region"="Other", 
-                                  "spatial_list"=Spatial_List, 
-                                  "Extrapolation_List"=Extrapolation_List )
-save(MapDetails_List, file = paste0(DateFile,"/MapDetails_List.Rdata"))
+# 
+# # Load triennial
+# # Has some problem with multiple replicated samples
+# ## There ARE zeroes here already...
+# if( "Triennial" %in% Surveys_to_include ){
+#   ThorsonUtilities::LoadFn( paste0(DataFile,"Catch__Triennial_2019-03-15.Rda"))
+#   Data2 <- Out
+#   rm(Out)
+#   Data2 <- cbind(Data2, "AreaSwept_km2"= Data2[,"Area_Swept_ha"]*0.01) #Data2[,'DISTANCE_FISHED']*Data2[,'NET_WIDTH']/1000 )
+#   Data2 <- ThorsonUtilities::rename_columns( Data2[,c('Year','Latitude_dd','Longitude_dd','AreaSwept_km2','total_catch_wt_kg',"Vessel")], 
+#                                              newname=c('Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel"))
+#   ## Create timeblocking
+#   Triennial_late <- subset(Data2, Year > 1995) %>% mutate(Survey = 'Triennial_late', Region = "CC")
+#   Triennial_early <- subset(Data2, Year <= 1995) %>% mutate(Survey = 'Triennial_early', Region = "CC")
+#   Data_CPUE = rbind( Data_CPUE, Triennial_late,  Triennial_early)
+#   rm(Data2)
+# }
+# 
+# # Load BC trap survey strs
+# if( "BCs" %in% Surveys_to_include ){
+#   # Exclude PCOD monitoring survey, which is non-random
+#   # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
+#   BCs <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))  %>% 
+#     filter(START_LONGITUDE <= 0 & !is.na(CPUE_TRAPS) & !is.na(TOTAL_SABLE_WEIGHT) & 
+#              SABLE_SET_TYPE == 'StRS') %>%
+#     ## calc area including soak time
+#     mutate(AreaSwept_km2=CPUE_TRAPS*DURATION_MINUTES/10000, ## to put on same scale as others
+#            TRIP_ID2 = paste(SET_YEAR,START_LATITUDE, START_LONGITUDE))
+#   
+#   
+#   Data3 <- ThorsonUtilities::rename_columns( BCs[,c("TRIP_ID2", 'SABLE_SET_TYPE','SET_YEAR','START_LATITUDE','START_LONGITUDE','AreaSwept_km2',"TOTAL_SABLE_WEIGHT","VESSEL_ID")],
+#                                              newname=c("TRIP_ID", 'Survey','Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel")) %>%
+#     # complete(Year,nesting(TRIP_ID,Lat,Lon),
+#     #          fill = list(Catch_KG = 0.0)) %>%
+#     mutate(Survey = 'BC_StRS', Region = 'BC') %>% select(-TRIP_ID)
+#   Data_CPUE <- rbind( Data_CPUE, Data3 )
+#   rm(Data3);  rm(BCs)
+# }
+# 
+# # Load BC offshore standardized
+# if( "BCo" %in% Surveys_to_include ){
+#   # Exclude PCOD monitoring survey, which is non-random
+#   # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
+#   BCo <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))  %>% 
+#     filter(START_LONGITUDE <= 0 & !is.na(CPUE_TRAPS) & !is.na(TOTAL_SABLE_WEIGHT) & 
+#              SABLE_SET_TYPE == 'OFFSHORE STANDARDIZED') %>%
+#     ## calc area including soak time
+#     mutate(AreaSwept_km2=CPUE_TRAPS*DURATION_MINUTES/10000, ## to put on same scale as others
+#            TRIP_ID2 = paste(SET_YEAR,START_LATITUDE, START_LONGITUDE))
+#   
+#   
+#   Data3b <- ThorsonUtilities::rename_columns( BCo[,c("TRIP_ID2", 'SABLE_SET_TYPE','SET_YEAR','START_LATITUDE','START_LONGITUDE','AreaSwept_km2',"TOTAL_SABLE_WEIGHT","VESSEL_ID")],
+#                                               newname=c("TRIP_ID", 'Survey','Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel")) %>%
+#     # complete(Year,nesting(TRIP_ID,Lat,Lon),
+#     #          fill = list(Catch_KG = 0.0)) %>%
+#     mutate(Survey = 'BC_OffStd', Region = 'BC') %>% select(-TRIP_ID)
+#   Data_CPUE <- rbind( Data_CPUE, Data3b )
+#   rm(Data3b);  rm(BCo)
+# }
+# ## BC Trawl survey
+# if( "BCt" %in% Surveys_to_include ){
+#   # Exclude PCOD monitoring survey, which is non-random
+#   # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
+#   BCt <- read.csv(paste0(DataFile,"/BC/BC_trawl_survey_sable_data.Oct312019.csv"))  %>% 
+#     filter(LONGITUDE <= 0 & !is.na(TOW_LENGTH_M) & !is.na(CATCH_WEIGHT) ) %>%
+#     mutate("AreaSwept_km2"=as.numeric(as.character(TOW_LENGTH_M))/1000)
+#   # BCt <- cbind( BCt,  #/1e6) ## to scale effort
+#   # BCt <- BCt[-which(BCt[,'ACTIVITY_DESC']=="HECATE STRAIT PCOD MONITORING TRAWL SURVEY"),]
+#   
+#   Data3a <- ThorsonUtilities::rename_columns( BCt[,c("SURVEY_ID", 'SURVEY_DESC','YEAR','LATITUDE','LONGITUDE',
+#                                                      'AreaSwept_km2',"CATCH_WEIGHT","VESSEL_NAME")], 
+#                                               newname=c("TRIP_ID", 'Survey','Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel")) %>% 
+#     mutate(Survey = 'BC_TRAWL', Region = 'BC')%>% select(-TRIP_ID)
+#   rm(BCt)
+#   Data_CPUE <-  rbind( Data_CPUE, Data3a )
+#   rm(Data3a)
+# }
+# 
+# if( "AK_DOM_LL" %in% Surveys_to_include ){
+#   # "Your data looks pretty good for the longline survey"
+#   ## slow to make the merge; did once and save.
+#   # AK_DOM_LL_Loc <-  read.csv( paste0(DataFile,"AK/LLData/catch_summary_view_with_nulls.csv"), header=TRUE,skip = 6) %>%
+#   #   filter(Year > 1989)
+#   # ## these have a small fudge factor leading to many dupes. get a mean survey location for each.
+#   # AK_DOM_LL0 <-  read.csv( paste0(DataFile,"AK/LLData/SurveyCatchAnalysis.csv"), header = TRUE)
+#   # names(AK_DOM_LL0)[1] <- 'Year'
+#   # 
+#   # # ## get station numbers from dom LL
+#   # AK_DOM_LL <- AK_DOM_LL_Loc %>% group_by(Station.Number,Year) %>% dplyr::summarise(meanLat = mean(Start.Latitude..DD.),
+#   #                                                                                   meanLon = mean(Start.Longitude..DD.)) %>%
+#   #   select(Station.Number,Year, meanLat, meanLon) %>%
+#   #   merge(AK_DOM_LL0,.,
+#   #         by = c("Year",'Station.Number'),  all.y = TRUE)
+#   # # ## overwrite NA weights to zero
+#   # AK_DOM_LL$Total.Weight..kg.[is.na( AK_DOM_LL$Total.Weight..kg.)] <- 0
+#   # write.csv(AK_DOM_LL, file = paste0(DataFile,"AK/LLData/merged_AK_DOM_LL.csv") )
+#   
+#   ## manually add vessels
+#   # the domestic LL survey for 1989-1993 was the vessel 'Ocean Prowler', 
+#   ## starting in 1994-present the 'Alaskan Leader' surveyed even years 
+#   ## and the 'Ocean Prowler' does odd years.
+#   
+#   Data5 <- read.csv(paste0(DataFile,"AK/LLData/merged_AK_DOM_LL.csv") )%>% 
+#     mutate(AreaSwept_km2 = 0.01, Vessel = ifelse(Year < 1994, "Ocean Prowler", 
+#                                                  ifelse(Year %% 2 == 0, 
+#                                                         "Alaskan Leader",  "Ocean Prowler"  ))) %>%
+#     select(c('Year','meanLat','meanLon','AreaSwept_km2','Total.Weight..kg.','Vessel'))
+#   
+#   # Data5 = FishData::add_missing_zeros( data_frame=GOA, Method=ZeroMethod, if_multiple_records=ifelse(ZeroMethod=="Slow",'Error','Combine'),
+#   # unique_sample_ID_colname="TowID", sample_colname="WEIGHT..KG.", species_subset=Species, species_colname="COMMON.NAME" )
+#   Data5 <- ThorsonUtilities::rename_columns( Data5[,c('Year','meanLat','meanLon','AreaSwept_km2','Total.Weight..kg.',"Vessel")], 
+#                                              newname=c('Year','Lat','Lon','AreaSwept_km2','Catch_KG',"Vessel"))  %>%
+#     mutate(Survey = 'AK_DOM_LL', Region = 'AK')
+#   Data5$Lon <- ifelse(  Data5$Lon > 0,   Data5$Lon*-1,  Data5$Lon) ## otherwise things in japan
+#   
+#   # AK_DOM_late <- subset(Data5, Year > 2009) %>% mutate(Survey = 'AK_DOM_late', "Region" = "AK")
+#   # AK_DOM_early <- subset(Data5, Year <= 2009) %>% mutate(Survey = 'AK_DOM_early', "Region" = "AK")
+#   
+#   Data_CPUE <- rbind( Data_CPUE, Data5) #AK_DOM_early, AK_DOM_late )
+#   # Data_CPUE <- rbind( Data_CPUE,  AK_DOM_early, AK_DOM_late )
+#   
+#   rm(Data5)
+#   
+# }
+# # Load GOA trawl -- these already have zeros
+# if( "GOA" %in% Surveys_to_include ){
+#   
+#   ## DH indicated to use <700m and drop 1984, 1987 and split at 1993
+#   ALL_GOA <- read.csv( paste0(DataFile,"AK/race_cpue_by_haul.csv"), header=TRUE ) %>% 
+#     filter( Gear.Depth <= 500 & !(Year %in% c(1984,1987)) ) 
+#   names(ALL_GOA) <- toupper(names(ALL_GOA))
+#   
+#   GOA <-  ALL_GOA %>%
+#     filter(SURVEY == 'GOA') %>%
+#     cbind( ., "Vessel" = as.factor(.$VESSEL.NUMBER),
+#            "TowID"=paste(.[,'YEAR'],.[,'STARTING.LATITUDE..DD.'],.[,'STARTING.LONGITUDE..DD.'],sep="_"), 
+#            "AreaSwept_km2"=0.01) #0.01
+#   AI <- ALL_GOA %>%
+#     filter(SURVEY == 'AI') %>%
+#     cbind( ., "Vessel" = as.factor(.$VESSEL.NUMBER),
+#            "TowID"=paste(.[,'YEAR'],.[,'STARTING.LATITUDE..DD.'],.[,'STARTING.LONGITUDE..DD.'],sep="_"), 
+#            "AreaSwept_km2"=0.01) #0.01
+#   
+#   Data4g <- GOA %>% select(c("YEAR","STARTING.LATITUDE..DD.","STARTING.LONGITUDE..DD.","AreaSwept_km2","WEIGHT..KG.","Vessel"))
+#   Data4a <- AI %>% select(c("YEAR","STARTING.LATITUDE..DD.","STARTING.LONGITUDE..DD.","AreaSwept_km2","WEIGHT..KG.","Vessel"))
+#   
+#   rm(GOA); rm(AI)
+#   Data4g <- ThorsonUtilities::rename_columns( Data4g[,c('YEAR','STARTING.LATITUDE..DD.','STARTING.LONGITUDE..DD.','AreaSwept_km2','WEIGHT..KG.',"Vessel")],
+#                                               newname=c('Year','Lat','Lon','AreaSwept_km2','Catch_KG','Vessel'))
+#   Data4a <- ThorsonUtilities::rename_columns( Data4a[,c('YEAR','STARTING.LATITUDE..DD.','STARTING.LONGITUDE..DD.','AreaSwept_km2','WEIGHT..KG.',"Vessel")],
+#                                               newname=c('Year','Lat','Lon','AreaSwept_km2','Catch_KG','Vessel'))
+#   Data4a$Lon <- ifelse(  Data4a$Lon > 0,   Data4a$Lon*-1,  Data4a$Lon) ## otherwise things in japan
+#   Data4g$Lon <- ifelse(  Data4g$Lon > 0,   Data4g$Lon*-1,  Data4g$Lon) ## otherwise things in japan
+#   
+#   
+#   ## Create timeblocking -- 2010 was a growth morph year break
+#   # GOA_mid <- subset(Data4, Year > 1993 & Year < 2010) %>% mutate(Survey = 'GOA_mid', Region = "GOA")
+#   GOA_late <- subset(Data4g, Year > 1993 ) %>% mutate(Survey = 'GOA_late', Region = "GOA")
+#   GOA_early <- subset(Data4g, Year <= 1993 ) %>% mutate(Survey = 'GOA_early', Region = "GOA")
+#   AI_late <- subset(Data4a, Year > 1993 ) %>% mutate(Survey = 'AI_late', Region = "AI")
+#   AI_early <- subset(Data4a, Year <= 1993 ) %>% mutate(Survey = 'AI_early', Region = "AI")
+#   
+#   
+#   Data_CPUE <- rbind( Data_CPUE, GOA_early, GOA_late, AI_late, AI_early)
+#   rm(Data4g);rm(Data4a); rm(GOA_late); rm(GOA_early);rm(AI_late); rm(AI_early)
+# }
+# 
+# Data_Geostat <- Data_CPUE[which(Data_CPUE$Year>=Year_Range[1] & Data_CPUE$Year<=Year_Range[2]),]
+# 
+# ## RESCALE THE DATA SO IT IS NOT HUGE
+# Data_Geostat$Catch_KG <- Data_Geostat$Catch_KG/1000 #(Data_Geostat$Catch_KG - mean(Data_Geostat$Catch_KG))/sd(Data_Geostat$Catch_KG)
+# Data_Geostat <- na.omit( Data_Geostat )
+# save(Data_Geostat, file = paste0(DateFile,"/Data_Geostat.Rdata"))
+# 
+# Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(Year))
+# 
+# Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(Catch_KG), max(Catch_KG)) ## should be 0 to pos
+# Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(AreaSwept_km2), max(AreaSwept_km2)) ## should be positive
+# Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(Year)) ## should be > Year_Range[1]
+# 
+# Region <- NULL 
+# ## This is Thorson's -- Kelli had a way of pre-subsetting to have N/S embedded
+# # if( TRUE ){
+# if(any(c("WCGBTS","Triennial") %in% Surveys_to_include)) Region = c( Region, "California_current")
+# if("BCs" %in% Surveys_to_include | "BCt" %in% Surveys_to_include) Region = c( Region, "British_Columbia" )
+# if("GOA" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska" )
+# if("GOA" %in% Surveys_to_include) Region = c( Region, "Aleutian_Islands" )
+# 
+# if("EBS"  %in% Surveys_to_include) Region = c( Region, "Eastern_Bering_Sea" )
+# if("AK_DOM_LL" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska", "Eastern_Bering_Sea" )
+# 
+# Extrapolation_List <- make_extrapolation_info( Region=Region, strata_to_use=c('SOG','WCVI','QCS','HS','WCHG'),
+#                                                zone=Zone, create_strata_per_region=create_strata_per_region )
+# # }else{
+# #   if(any(c("WCGBTS","Triennial") %in% Surveys_to_include)) Region = c( Region, "California_current")
+# #   if("BCs" %in% Surveys_to_include | "BCt" %in% Surveys_to_include) Region = c( Region, "British_Columbia" )
+# #   if("GOA" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska" )
+# #   if("EBS" %in% Surveys_to_include) Region = c( Region, "Eastern_Bering_Sea" )
+# #   if("AK_DOM_LL" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska", "Eastern_Bering_Sea" )
+# #   
+# #   observations_LL <- Data_Geostat[ which(Data_Geostat[,'Region']=="BC"), c('Lat','Lon') ]
+# #   Extrapolation_List <-  make_extrapolation_info( Region=Region,
+# #                                                   observations_LL=observations_LL, zone=Zone, create_strata_per_region=create_strata_per_region )
+# # }
+# save(Extrapolation_List, file = paste0(DateFile,"/Extrapolation_List.Rdata"))
+# ## Make spatial list ----
+# Spatial_List <- make_spatial_info( n_x=n_x, Lon=Data_Geostat[,'Lon'], 
+#                                    Lat=Data_Geostat[,'Lat'], 
+#                                    Extrapolation_List=Extrapolation_List,
+#                                    DirPath=DateFile, Save_Results=FALSE, 
+#                                    "knot_method"="grid", refine=FALSE, 
+#                                    fine_scale=fine_scale )
+# 
+# save(Spatial_List, file = paste0(DateFile,"/Spatial_List.Rdata"))
+# 
+# # Plot details
+# MapDetails_List <- make_map_info( "Region"="Other", 
+#                                   "spatial_list"=Spatial_List, 
+#                                   "Extrapolation_List"=Extrapolation_List )
+# save(MapDetails_List, file = paste0(DateFile,"/MapDetails_List.Rdata"))
 
 Year_Set <- min(Data_Geostat[,'Year']):max(Data_Geostat[,'Year'])
 
