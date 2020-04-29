@@ -10,7 +10,7 @@ library(mapdata)
 library(ggplot2)
 
 # Directories ----
-comp.name <- c("mkapur",'maia kapur')[1]
+comp.name <- c("mkapur",'maia kapur')[2]
 RootFile <- paste0( "C:/Users/",comp.name ,"/Dropbox/UW/sab-idx/runs/") 
 DataFile  <- paste0( "C:/Users/",comp.name ,"/Dropbox/UW/sab-idx/data/" ) #paste0( RootFile,"Data/")
 
@@ -387,7 +387,7 @@ Opt <- TMBhelper::fit_tmb(
   upper = TmbList[["Upper"]],
   newtonsteps = 1,
   getsd = TRUE,
-  bias.correct = TRUE,
+  bias.correct = TRUE, ## could try false
   bias.correct.control = list(vars_to_correct = "Index_cyl"),
   savedir = DateFile
 )  # , rel.tol=1e-20
