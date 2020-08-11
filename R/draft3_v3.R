@@ -369,9 +369,17 @@ TmbData <- VAST::make_data(
 save(TmbData, file = paste0(DateFile,"/TmbData.Rdata"))
 
 # Make TMB object
-TmbList <- make_model("build_model"=TRUE, "TmbData"=TmbData, "RunDir"=DateFile, 
-                      "Version"=Version, "RhoConfig"=RhoConfig, 
-                      "loc_x"=Spatial_List$loc_x, "Method"=Method, "TmbDir"=getwd())
+TmbList <-
+  make_model(
+    "build_model" = TRUE,
+    "TmbData" = TmbData,
+    "RunDir" = DateFile,
+    "Version" = Version,
+    "RhoConfig" = RhoConfig,
+    "loc_x" = Spatial_List$loc_x,
+    "Method" = Method,
+    "TmbDir" = getwd()
+  )
 
 save(TmbList, file = paste0(DateFile,"/TmbList.Rdata"))
 
@@ -387,6 +395,7 @@ Opt <- TMBhelper::fit_tmb(
   upper = TmbList[["Upper"]],
   newtonsteps = 1,
   getsd = TRUE,
+  getJointPrecision = TRUE, ## required for SIMULATOR
   bias.correct = TRUE, ## could try false
   bias.correct.control = list(vars_to_correct = "Index_cyl"),
   savedir = DateFile
