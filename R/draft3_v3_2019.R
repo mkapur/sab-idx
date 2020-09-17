@@ -1,5 +1,9 @@
-
 # remotes::install_github("james-thorson/VAST@749177f30e423f2160a24f1c81326b75925d4226") ## This is a commit on 13 Jan
+
+## using SHA keys from run on 2020-01-23 in hopes of correcting spatial_list
+## when prompted i rejected all updates
+# remotes::install_github("james-thorson/VAST@deca9d5d3e4efc81088362a7113489ad0a13ac0e") ## we want the version from 2019-07-25
+# remotes::install_github("james-thorson/FishStatsUtils@8b428274b7abeace2a905714ddb836c5892d727e")
 
 library(VAST)
 library(TMB)
@@ -8,7 +12,7 @@ library(tidyr)
 library(reshape)
 library(mapdata)
 library(ggplot2)
-library(nwfscSurvey)
+# library(nwfscSurvey)
 library(here)
 
 ## 2020 Update: add 2019 survey data
@@ -23,7 +27,7 @@ RootFile <- here('runs')
 DataFile  <- here('data')
 
 # Resolution
-n_x <- 500 # Number of stations
+n_x <- 100 #Number of stations
 
 # Choose species
 Species <- "Anoplopoma fimbria"
@@ -303,8 +307,12 @@ if("GOA" %in% Surveys_to_include) Region = c( Region, "Aleutian_Islands" )
 if("EBS"  %in% Surveys_to_include) Region = c( Region, "Eastern_Bering_Sea" )
 if("AK_DOM_LL" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska", "Eastern_Bering_Sea" )
 
-Extrapolation_List <- make_extrapolation_info( Region=Region, strata_to_use=c('SOG','WCVI','QCS','HS','WCHG'),
-                                               zone=Zone, create_strata_per_region=create_strata_per_region )
+
+## make extrapolation list ====
+Extrapolation_List <- make_extrapolation_info( Region=Region, 
+                                               strata_to_use=c('SOG','WCVI','QCS','HS','WCHG'),
+                                               zone=Zone, 
+                                               create_strata_per_region=create_strata_per_region )
 # }else{
 #   if(any(c("WCGBTS","Triennial") %in% Surveys_to_include)) Region = c( Region, "California_current")
 #   if("BCs" %in% Surveys_to_include | "BCt" %in% Surveys_to_include) Region = c( Region, "British_Columbia" )
@@ -314,19 +322,30 @@ Extrapolation_List <- make_extrapolation_info( Region=Region, strata_to_use=c('S
 #   
 #   observations_LL <- Data_Geostat[ which(Data_Geostat[,'Region']=="BC"), c('Lat','Lon') ]
 #   Extrapolation_List <-  make_extrapolation_info( Region=Region,
-#                                                   observations_LL=observations_LL, zone=Zone, create_strata_per_region=create_strata_per_region )
+#                                                   observations_LL=observations_LL,
+# zone=Zone, create_strata_per_region=create_strata_per_region )
 # }
 
 ## Make spatial list ----
-Spatial_List <- make_spatial_info( n_x=n_x, Lon=Data_Geostat[,'Lon'], 
+Spatial_List <- make_spatial_info( n_x=n_x, 
+                                   Lon=Data_Geostat[,'Lon'], 
                                    Lat=Data_Geostat[,'Lat'], 
                                    Extrapolation_List=Extrapolation_List,
-                                   DirPath=DateFile, Save_Results=FALSE, 
+                                   # DirPath=DateFile, 
+                                   Save_Results=FALSE, 
                                    "knot_method"="grid", refine=FALSE, 
                                    fine_scale=fine_scale )
 
 save(Spatial_List, file = paste0(DateFile,"/Spatial_List.Rdata"))
 
+# Plot location of data
+png(paste0(DateFile,"/Extrapolation_List.png"), width = 8, height = 6, units = 'in', res = 520)
+plot( Extrapolation_List ) 
+dev.off()
+png(paste0(DateFile,"/Spatial_List.png"), width = 8, height = 6, units = 'in', res = 520)
+plot( Spatial_List ) ## double check that this looks like the hawaiian archipelago
+dev.off()
+  
 # Plot details
 MapDetails_List <- make_map_info( "Region"="Other", 
                                   "spatial_list"=Spatial_List, 
@@ -358,13 +377,7 @@ if( length(unique(Data_Geostat[,'Survey']))==1  |
 }
 head(Q_ik) ## should have ncol == fleets-1
 
-# Plot location of data
-png(paste0(DateFile,"/Extrapolation_List.png"), width = 8, height = 6, units = 'in', res = 520)
-plot( Extrapolation_List )
-dev.off()
-png(paste0(DateFile,"/Spatial_List.png"), width = 8, height = 6, units = 'in', res = 520)
-plot( Spatial_List ) 
-dev.off()
+)
 
 ## from CC version
 TmbData <- VAST::make_data(
@@ -490,7 +503,7 @@ plot_range_index( Sdreport=Save$Opt$SD, Report=Save$Report, Year_Set=Year_Set,
                   PlotDir=DateFile 
 )
 # source("https://raw.githubusercontent.com/nwfsc-assess/VASTWestCoast/2473eb0ca2c25aa780e39ff1a94e7252d0d335bc/R/summary_nwfsc.R")
-source("./R/summary_nwfscMK.r")
+source(here("R","summary_nwfscMK.R"))
 TableC <- summary_nwfscMK(obj = Save$Obj, 
                           sdreport = Save$Opt$SD, 
                           savedir = DateFile)[[3]]
