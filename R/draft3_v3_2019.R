@@ -18,9 +18,9 @@ library(here)
 # catch = PullCatch.fn(Name = "sablefish", SurveyName = "Triennial", SaveFile = TRUE, Dir = here("data")) 
 
 # Directories ----
-comp.name <- c("mkapur",'maia kapur')[1]
-RootFile <- paste0( "C:/Users/",comp.name ,"/Dropbox/UW/sab-idx/runs/") 
-DataFile  <- paste0( "C:/Users/",comp.name ,"/Dropbox/UW/sab-idx/data/" ) #paste0( RootFile,"Data/")
+comp.name <- c("mkapur",'maia kapur')[2]
+RootFile <- here('runs')
+DataFile  <- here('data')
 
 # Resolution
 n_x <- 500 # Number of stations
@@ -115,7 +115,7 @@ if( "WCGBTS" %in% Surveys_to_include ){
 # Has some problem with multiple replicated samples
 ## There ARE zeroes here already...
 if( "Triennial" %in% Surveys_to_include ){
-  ThorsonUtilities::LoadFn( paste0(DataFile,"Catch__Triennial_2020-09-15.Rda"))
+  ThorsonUtilities::LoadFn( here('data',"Catch__Triennial_2020-09-15.Rda"))
   Data2 <- Out
   rm(Out)
   Data2 <- cbind(Data2, "AreaSwept_km2"= Data2[,"Area_Swept_ha"]*0.01) #Data2[,'DISTANCE_FISHED']*Data2[,'NET_WIDTH']/1000 )
@@ -133,7 +133,7 @@ if( "BCs" %in% Surveys_to_include ){
   # Exclude PCOD monitoring survey, which is non-random
   # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
   # BCs <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))  %>%
-  BCs <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.23Dec2019.csv"))  %>% 
+  BCs <- read.csv(here('data',"/BC/BC_sable_survey_data.23Dec2019.csv"))  %>% 
     filter(START_LONGITUDE <= 0 & !is.na(CPUE_TRAPS) & !is.na(TOTAL_SABLE_WEIGHT) & 
              SABLE_SET_TYPE == 'StRS') %>%
     ## calc area including soak time
@@ -155,7 +155,7 @@ if( "BCo" %in% Surveys_to_include ){
   # Exclude PCOD monitoring survey, which is non-random
   # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
   # BCo <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))  %>%
-  BCo <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.23Dec2019.csv"))  %>%    
+  BCo <- read.csv(here('data',"/BC/BC_sable_survey_data.23Dec2019.csv"))  %>%    
     filter(START_LONGITUDE <= 0 & !is.na(CPUE_TRAPS) & !is.na(TOTAL_SABLE_WEIGHT) & 
              SABLE_SET_TYPE == 'OFFSHORE STANDARDIZED') %>%
     ## calc area including soak time
@@ -175,7 +175,7 @@ if( "BCo" %in% Surveys_to_include ){
 if( "BCt" %in% Surveys_to_include ){
   # Exclude PCOD monitoring survey, which is non-random
   # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
-  BCt <- read.csv(paste0(DataFile,"/BC/BC_trawl_survey_sable_data.Oct312019.csv"))  %>% 
+  BCt <- read.csv(here('data',"/BC/BC_trawl_survey_sable_data.Oct312019.csv"))  %>% 
     filter(LONGITUDE <= 0 & !is.na(TOW_LENGTH_M) & !is.na(CATCH_WEIGHT) ) %>%
     mutate("AreaSwept_km2"=as.numeric(as.character(TOW_LENGTH_M))/1000)
   # BCt <- cbind( BCt,  #/1e6) ## to scale effort
@@ -214,7 +214,7 @@ if( "AK_DOM_LL" %in% Surveys_to_include ){
   ## starting in 1994-present the 'Alaskan Leader' surveyed even years 
   ## and the 'Ocean Prowler' does odd years.
   ## this already has thru 2019!
-  Data5 <- read.csv(paste0(DataFile,"AK/LLData/merged_AK_DOM_LL.csv") )%>% 
+  Data5 <- read.csv(here('data',"AK/LLData/merged_AK_DOM_LL.csv") )%>% 
     mutate(AreaSwept_km2 = 0.01, Vessel = ifelse(Year < 1994, "Ocean Prowler", 
                                                  ifelse(Year %% 2 == 0, 
                                                         "Alaskan Leader",  "Ocean Prowler"  ))) %>%
@@ -240,7 +240,7 @@ if( "AK_DOM_LL" %in% Surveys_to_include ){
 if( "GOA" %in% Surveys_to_include ){
   
   ## DH indicated to use <700m and drop 1984, 1987 and split at 1993
-  ALL_GOA <- read.csv( paste0(DataFile,"AK/race_cpue_by_haul.csv"), header=TRUE ) %>% 
+  ALL_GOA <- read.csv( here('data',"AK/race_cpue_by_haul.csv"), header=TRUE ) %>% 
     filter( Gear.Depth <= 500 & !(Year %in% c(1984,1987)) ) 
   names(ALL_GOA) <- toupper(names(ALL_GOA))
   
@@ -398,7 +398,7 @@ TmbList <-
     "RhoConfig" = RhoConfig,
     "loc_x" = Spatial_List$loc_x,
     "Method" = Method,
-    "TmbDir" = getwd()
+    "TmbDir" = here()
   )
 
 save(TmbList, file = paste0(DateFile,"/TmbList.Rdata"))
