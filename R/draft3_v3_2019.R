@@ -22,12 +22,12 @@ library(here)
 # catch = PullCatch.fn(Name = "sablefish", SurveyName = "Triennial", SaveFile = TRUE, Dir = here("data")) 
 
 # Directories ----
-comp.name <- c("mkapur",'maia kapur')[2]
+comp.name <- c("mkapur",'maia kapur')[1]
 RootFile <- here('runs')
 DataFile  <- here('data')
 
 # Resolution
-n_x <- 100 #Number of stations
+n_x <- 250 #Number of stations
 
 # Choose species
 Species <- "Anoplopoma fimbria"
@@ -38,10 +38,10 @@ Surveys_to_include <- c("Triennial", "WCGBTS", "BCs", "BCo",
 
 # Date
 Date <- Sys.Date()
-BaseQ <- c("GOA_late","AK_DOM_late", "AK_DOM_LL","WCGBTS")[3]
+BaseQ <- c("GOA_late", "AK_DOM_LL","WCGBTS")[1]
 Year_Range = c(1980, 2019)
 
-DateFile <- paste0(RootFile,Date,"_nx=",n_x,"_", 
+DateFile <- paste0(RootFile,"/",Date,"_nx=",n_x,"_", 
                    paste0(Surveys_to_include, collapse = "_"),
                    "_baseQ=",BaseQ,
                    paste0(Year_Range, collapse = "_"),"/")
@@ -313,6 +313,9 @@ Extrapolation_List <- make_extrapolation_info( Region=Region,
                                                strata_to_use=c('SOG','WCVI','QCS','HS','WCHG'),
                                                zone=Zone, 
                                                create_strata_per_region=create_strata_per_region )
+
+save(Extrapolation_List, file = paste0(DateFile,"/Extrapolation_List.Rdata"))
+
 # }else{
 #   if(any(c("WCGBTS","Triennial") %in% Surveys_to_include)) Region = c( Region, "California_current")
 #   if("BCs" %in% Surveys_to_include | "BCt" %in% Surveys_to_include) Region = c( Region, "British_Columbia" )
@@ -377,7 +380,7 @@ if( length(unique(Data_Geostat[,'Survey']))==1  |
 }
 head(Q_ik) ## should have ncol == fleets-1
 
-)
+
 
 ## from CC version
 TmbData <- VAST::make_data(
@@ -428,7 +431,7 @@ Opt <- TMBhelper::fit_tmb(
   upper = TmbList[["Upper"]],
   newtonsteps = 1,
   getsd = TRUE,
-  getJointPrecision = TRUE, ## required for SIMULATOR
+  getJointPrecision = FALSE, ## required for SIMULATOR
   bias.correct = TRUE, ## could try false
   bias.correct.control = list(vars_to_correct = "Index_cyl"),
   savedir = DateFile
@@ -485,9 +488,11 @@ plot_residuals( Lat_i=Data_Geostat[,'Lat'], Lon_i=Data_Geostat[,'Lon'],
 projargs_plot = "+proj=utm +datum=WGS84 +units=km +zone=3"
 #projargs_plot = "+proj=moll +lon_0=-150 +datum=WGS84 +units=km"
 #projargs_plot = "+proj=natearth +lon_0=-180 +datum=WGS84 +units=km"
+devtools::source_url("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/fc564104b59999af7156b22dcca6c623e51cdd9a/R/plot_maps.r")
+
 plot_maps(
   plot_set = 3,
-  Report = Report,
+  Report = Save$Report,
   PlotDF = MapDetails_List[["PlotDF"]],
   working_dir = NA,
   Year_Set = Year_Set,
@@ -509,6 +514,7 @@ TableC <- summary_nwfscMK(obj = Save$Obj,
                           savedir = DateFile)[[3]]
 
 TableC %>% data.frame() %>% 
-  exp() %>% round(.,2) %>% 
+  # exp() %>% 
+  round(.,2) %>% 
   mutate('PAR'=row.names(TableC)) %>%
   write.csv(.,file = paste0(DateFile,'tableC_mod.csv'))
