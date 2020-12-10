@@ -315,7 +315,6 @@ Extrapolation_List <- make_extrapolation_info( Region=Region,
                                                create_strata_per_region=create_strata_per_region )
 
 save(Extrapolation_List, file = paste0(DateFile,"/Extrapolation_List.Rdata"))
-
 # }else{
 #   if(any(c("WCGBTS","Triennial") %in% Surveys_to_include)) Region = c( Region, "California_current")
 #   if("BCs" %in% Surveys_to_include | "BCt" %in% Surveys_to_include) Region = c( Region, "British_Columbia" )
@@ -485,20 +484,27 @@ plot_residuals( Lat_i=Data_Geostat[,'Lat'], Lon_i=Data_Geostat[,'Lon'],
                 extrapolation_list = Extrapolation_List,
                 TmbData=TmbData, Report=Report, Q=Q, savedir=DateFile, spatial_list=Spatial_List )
 
-projargs_plot = "+proj=utm +datum=WGS84 +units=km +zone=3"
-#projargs_plot = "+proj=moll +lon_0=-150 +datum=WGS84 +units=km"
-#projargs_plot = "+proj=natearth +lon_0=-180 +datum=WGS84 +units=km"
-devtools::source_url("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/fc564104b59999af7156b22dcca6c623e51cdd9a/R/plot_maps.r")
+projargs_plot = "+proj=utm +datum=WGS84 +units=km +zone=3" ## gives spTransform error w latest fishstat
+# projargs_plot = "+proj=moll +lon_0=-150 +datum=WGS84 +units=km"
+# projargs_plot = "+proj=longlat +lon_0=-180 +zone=3 +datum=WGS84 +units=km"
+# projargs_plot = "+proj=longlat"
+# projargs_plot = "+proj=natearth +lon_0=-150 +datum=WGS84 +units=km"
+# devtools::source_url("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/fc564104b59999af7156b22dcca6c623e51cdd9a/R/plot_maps.r")
+# use these two from Jan 10
+devtools::source_url("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/b90c65bef7d25919cc3af7a257451ba25804f8df/R/plot_maps.r")
+devtools::source_url("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/b90c65bef7d25919cc3af7a257451ba25804f8df/R/plot_variable.R")
+
 
 plot_maps(
   plot_set = 3,
   Report = Save$Report,
   PlotDF = MapDetails_List[["PlotDF"]],
-  working_dir = NA,
+  working_dir = DateFile,
   Year_Set = Year_Set,
   Years2Include = (1:length(Year_Set))[Year_Set >1994 & Year_Set %%5==0],
-  projargs = projargs_plot,
-  country = c("united states of america", "canada", "mexico", "russia", 'japan')
+  country = c("united states of america", "canada", "mexico", "russia", 'japan'),
+  projargs = projargs_plot
+
 )
 
 ## plot easting-northing shifts
