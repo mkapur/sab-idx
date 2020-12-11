@@ -5,7 +5,7 @@ require(mapdata)
 require(ggsidekick)
 require(here)
 # source("C:/Users/maia kapur/Dropbox/UW/sab-mse/input/input_data/colorPals.R") ## OM/MSE palettes
-
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 # load("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2020-01-23_nx=500_Triennial_WCGBTS_BCs_BCo_AK_DOM_LL_GOA_baseQ=AK_DOM_LL1980_2018/Data_Geostat.Rdata")
 ## reboot of jim code showing survey regions and sample sizes [he used base] ----
 usa <- map_data("world")
@@ -179,7 +179,12 @@ for(i in 1:nrow(vastc)){
                                     "AK"))
   if(vastc$Fleet[i] == 'AllAreas')   vastc$Fleet2[i] <- "ALL"
 }
-## needed to do this for WCGBTS/GOALATE AS REF
+# 
+# ## needed to do this for WCGBTS/GOALATE AS REF
+# vastc$Estimate_metric_tons <- vastc$Estimate_metric_tons*1000
+# vastc$uci <- vastc$uci*1000
+# vastc$lci <- vastc$lci*1000
+
 # vastc$Estimate_metric_tons[vastc$Fleet2 == 'BC'] <-
 #   vastc$Estimate_metric_tons[vastc$Fleet2 == 'BC'] * 1E-2
 # vastc$uci[vastc$Fleet2 == 'BC'] <- vastc$uci[vastc$Fleet2 == 'BC'] * 1E-2
@@ -194,7 +199,7 @@ for(i in 1:nrow(vastc)){
 # vastc$uci[vastc$Fleet2 == 'AK'] <-
 #   vastc$uci[vastc$Fleet2 == 'AK'] * 1E-4
 # vastc$lci[vastc$Fleet2 == 'AK'] <- vastc$lci[vastc$Fleet2 == 'AK'] * 1E-4
-# # 
+# #
 # vastc$Estimate_metric_tons[vastc$Fleet == 'Gulf_of_Alaska'] <-
 #   vastc$Estimate_metric_tons[vastc$Fleet == 'Gulf_of_Alaska'] * 1e3/1e4
 # vastc$uci[vastc$Fleet == 'Gulf_of_Alaska'] <-
@@ -261,8 +266,8 @@ rbind(vastc,assc) %>%
                         labels = c(custnames)) +
   labs(x = 'Year', y = 'Estimate (mt)', color = "", linetype = "",
        title = '',
-       subtitle = 'BC&AK assessment vals have been multiplied by 1000;
-       input dat was div by 1000') +
+       subtitle = 'All VAST Estimates have been multiplied by 1000;
+       (input dat was div by 1000)') +
 
   facet_wrap(~Fleet2, scales = 'free_y', ncol = 3)
 
