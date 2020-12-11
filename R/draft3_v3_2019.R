@@ -38,7 +38,7 @@ Surveys_to_include <- c("Triennial", "WCGBTS", "BCs", "BCo",
 
 # Date
 Date <- Sys.Date()
-BaseQ <- c("GOA_late", "AK_DOM_LL","WCGBTS")[1]
+BaseQ <- c("GOA_late", "AK_DOM_LL","WCGBTS")[3]
 Year_Range = c(1980, 2019)
 
 DateFile <- paste0(RootFile,"/",Date,"_nx=",n_x,"_", 
