@@ -5,11 +5,11 @@
 
 
 ## needs to be a fresh run; got singularity issues on updated versions
-source("./R/draft3_v3.R")
+# source("./R/draft3_v3.R")
  ## this is from dev FishStatsUtils -- if I update from v2.5 my original model no longer works
 ## so just sourcing the function instead
 
-source("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/f5b7f29096165ee330652b3afdf76a7c60148a5a/R/simulate_data.R")
+# source("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/f5b7f29096165ee330652b3afdf76a7c60148a5a/R/simulate_data.R")
 
 Sim <- Obj$simulate( complete=TRUE )
 
