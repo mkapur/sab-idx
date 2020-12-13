@@ -478,7 +478,7 @@ plot_anisotropy( FileName=paste0(DateFile,"Aniso.png"), Report=Report )
 
 # Positive catch rate diagnostics
 Q <- plot_quantile_diagnostic( TmbData=TmbData, Report=Report, DateFile=DateFile ) # SpatialDeltaGLMM::
-
+save(Q, file = paste0(DateFile,'Q.rdata'))
 # Pearson residuals diagnostics
 plot_residuals( Lat_i=Data_Geostat[,'Lat'], Lon_i=Data_Geostat[,'Lon'], 
                 extrapolation_list = Extrapolation_List,
