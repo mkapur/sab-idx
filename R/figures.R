@@ -181,9 +181,9 @@ for(i in 1:nrow(vastc)){
 }
 # 
 # ## needed to do this for WCGBTS/GOALATE AS REF
-# vastc$Estimate_metric_tons <- vastc$Estimate_metric_tons*1000
-# vastc$uci <- vastc$uci*1000
-# vastc$lci <- vastc$lci*1000
+vastc$Estimate_metric_tons <- vastc$Estimate_metric_tons*1000
+vastc$uci <- vastc$uci*1000
+vastc$lci <- vastc$lci*1000
 
 # vastc$Estimate_metric_tons[vastc$Fleet2 == 'BC'] <-
 #   vastc$Estimate_metric_tons[vastc$Fleet2 == 'BC'] * 1E-2
