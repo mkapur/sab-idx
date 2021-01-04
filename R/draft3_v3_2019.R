@@ -27,7 +27,7 @@ RootFile <- here('runs')
 DataFile  <- here('data')
 
 # Resolution
-n_x <- 250 #Number of stations
+n_x <- 1000 #Number of stations
 
 # Choose species
 Species <- "Anoplopoma fimbria"
