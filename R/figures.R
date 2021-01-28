@@ -4,6 +4,8 @@ require(reshape2)
 require(mapdata)
 require(ggsidekick)
 require(here)
+survfltPal <-  matrix(PNWColors::pnw_palette(name = 'Bay',n=5), ncol = 5) ## for VAST outputs
+
 # source("C:/Users/maia kapur/Dropbox/UW/sab-mse/input/input_data/colorPals.R") ## OM/MSE palettes
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 # load("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2020-01-23_nx=500_Triennial_WCGBTS_BCs_BCo_AK_DOM_LL_GOA_baseQ=AK_DOM_LL1980_2018/Data_Geostat.Rdata")
@@ -51,7 +53,7 @@ plist[[2]] <- Data_Geostat %>%
   # geom_point(size = 4) +
   geom_bar(stat = 'identity', position = 'stack')+
   # scale_y_continuous(limits = c(0,1100), breaks = seq(0,1000,1000)) +
-  scale_fill_manual(values = c('orchid','grey22',survfltPal)) +
+  # scale_fill_manual(values = c('orchid','grey22',survfltPal)) +
   labs(x = 'Year', y = 'Sample Size', color = 'Survey')
 
 Rmisc::multiplot(plotlist = plist, cols = 1)
