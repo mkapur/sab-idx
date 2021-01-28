@@ -355,6 +355,7 @@ MapDetails_List <- make_map_info( "Region"="Other",
                                   "spatial_list"=Spatial_List, 
                                   "Extrapolation_List"=Extrapolation_List )
 Year_Set <- min(Data_Geostat[,'Year']):max(Data_Geostat[,'Year'])
+save(MapDetails_List, file = paste0(DateFile,"/MapDetails_List.Rdata"))
 
 # Exclude surveys without any encounters
 EncNum_k <- tapply( Data_Geostat[,'Catch_KG'], INDEX=Data_Geostat[,'Survey'], 
