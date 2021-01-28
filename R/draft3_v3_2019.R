@@ -22,7 +22,7 @@ library(here)
 # catch = PullCatch.fn(Name = "sablefish", SurveyName = "Triennial", SaveFile = TRUE, Dir = here("data")) 
 
 # Directories ----
-comp.name <- c("mkapur",'maia kapur')[1]
+comp.name <- c("mkapur",'maia kapur')[2]
 RootFile <- here('runs')
 DataFile  <- here('data')
 
@@ -162,8 +162,12 @@ if( "BCo" %in% Surveys_to_include ){
   # Exclude PCOD monitoring survey, which is non-random
   # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
 ## use aug pull cause it has data pre 2003
+  # 2010 can be dropped from the Offshore Standardized survey (it is considered suspect)
   BCo <-    read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))  %>%
-    filter(START_LONGITUDE <= 0 & !is.na(CPUE_TRAPS) & !is.na(TOTAL_SABLE_WEIGHT) & 
+    filter(START_LONGITUDE <= 0 & 
+             SET_YEAR != '2010' &
+             !is.na(CPUE_TRAPS) & 
+             !is.na(TOTAL_SABLE_WEIGHT) & 
              SABLE_SET_TYPE == 'OFFSHORE STANDARDIZED') %>%
     ## calc area including soak time
     mutate(AreaSwept_km2=CPUE_TRAPS*DURATION_MINUTES/10000, ## to put on same scale as others
