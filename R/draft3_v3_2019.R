@@ -1,4 +1,4 @@
-# remotes::install_github("james-thorson/VAST@749177f30e423f2160a24f1c81326b75925d4226") ## This is a commit on 13 Jan
+# remotes::install_github("james-thorson/VAST@749177f30e423f2160a24f1c81326b75925d4226") ## This is a commit on 13 Jan; not as confident
 
 ## using SHA keys from run on 2020-01-23 in hopes of correcting spatial_list
 ## when prompted i rejected all updates
@@ -27,7 +27,7 @@ RootFile <- here('runs')
 DataFile  <- here('data')
 
 # Resolution
-n_x <- 1000 #Number of stations
+n_x <- 500 #Number of stations
 
 # Choose species
 Species <- "Anoplopoma fimbria"
@@ -137,7 +137,10 @@ if( "BCs" %in% Surveys_to_include ){
   # Exclude PCOD monitoring survey, which is non-random
   # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
   # BCs <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))  %>%
+  ## Dec pull has dat thru 2019, which we want (only applicable for StRs)
   BCs <- read.csv(here('data',"/BC/BC_sable_survey_data.23Dec2019.csv"))  %>% 
+    
+    
     filter(START_LONGITUDE <= 0 & !is.na(CPUE_TRAPS) & !is.na(TOTAL_SABLE_WEIGHT) & 
              SABLE_SET_TYPE == 'StRS') %>%
     ## calc area including soak time
@@ -158,13 +161,26 @@ if( "BCs" %in% Surveys_to_include ){
 if( "BCo" %in% Surveys_to_include ){
   # Exclude PCOD monitoring survey, which is non-random
   # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
-  # BCo <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))  %>%
-  BCo <- read.csv(here('data',"/BC/BC_sable_survey_data.23Dec2019.csv"))  %>%    
+## for some reason the Dec CSV doesn't go before 2003.
+  ## For consistency, just stich the aug thru 2018 and dec for 2019.
+  BCo_aug19 <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))
+  # BCo_dec19 <-read.csv(here('data',"/BC/BC_sable_survey_data.23Dec2019.csv")) ## only goes to 2003
+  
+  
+  # BCo_aug19 %>% filter(SABLE_SET_TYPE %in% c('OFFSHORE STANDARDIZED', 'StRS'))  %>% 
+  #   group_by(SABLE_SET_TYPE) %>% summarise(min(SET_YEAR), max(SET_YEAR))
+  # 
+  # BCo_dec19 %>% filter(SABLE_SET_TYPE %in% c('OFFSHORE STANDARDIZED', 'StRS'))  %>% 
+  #   group_by(SABLE_SET_TYPE) %>% summarise(min(SET_YEAR), max(SET_YEAR))
+  # BCo <- 
+  
+  BCo_aug19  %>%
     filter(START_LONGITUDE <= 0 & !is.na(CPUE_TRAPS) & !is.na(TOTAL_SABLE_WEIGHT) & 
              SABLE_SET_TYPE == 'OFFSHORE STANDARDIZED') %>%
     ## calc area including soak time
     mutate(AreaSwept_km2=CPUE_TRAPS*DURATION_MINUTES/10000, ## to put on same scale as others
-           TRIP_ID2 = paste(SET_YEAR,START_LATITUDE, START_LONGITUDE))
+           TRIP_ID2 = paste(SET_YEAR,START_LATITUDE, START_LONGITUDE)) %>%
+    group_by(SET_YEAR) %>% summarise(n = n())
   
   
   Data3b <- ThorsonUtilities::rename_columns( BCo[,c("TRIP_ID2", 'SABLE_SET_TYPE','SET_YEAR','START_LATITUDE','START_LONGITUDE','AreaSwept_km2',"TOTAL_SABLE_WEIGHT","VESSEL_ID")],
@@ -290,11 +306,10 @@ Data_Geostat$Catch_KG <- Data_Geostat$Catch_KG/1000 #(Data_Geostat$Catch_KG - me
 Data_Geostat <- na.omit( Data_Geostat )
 save(Data_Geostat, file = paste0(DateFile,"/Data_Geostat.Rdata"))
 
-Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(max(Year))
+Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(Year),max(Year))
 
 Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(Catch_KG), max(Catch_KG)) ## should be 0 to pos
 Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(AreaSwept_km2), max(AreaSwept_km2)) ## should be positive
-Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(Year)) ## should be > Year_Range[1]
 
 Region <- NULL 
 ## This is Thorson's -- Kelli had a way of pre-subsetting to have N/S embedded
