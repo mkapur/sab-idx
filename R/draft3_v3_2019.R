@@ -161,26 +161,13 @@ if( "BCs" %in% Surveys_to_include ){
 if( "BCo" %in% Surveys_to_include ){
   # Exclude PCOD monitoring survey, which is non-random
   # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
-## for some reason the Dec CSV doesn't go before 2003.
-  ## For consistency, just stich the aug thru 2018 and dec for 2019.
-  BCo_aug19 <- read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))
-  # BCo_dec19 <-read.csv(here('data',"/BC/BC_sable_survey_data.23Dec2019.csv")) ## only goes to 2003
-  
-  
-  # BCo_aug19 %>% filter(SABLE_SET_TYPE %in% c('OFFSHORE STANDARDIZED', 'StRS'))  %>% 
-  #   group_by(SABLE_SET_TYPE) %>% summarise(min(SET_YEAR), max(SET_YEAR))
-  # 
-  # BCo_dec19 %>% filter(SABLE_SET_TYPE %in% c('OFFSHORE STANDARDIZED', 'StRS'))  %>% 
-  #   group_by(SABLE_SET_TYPE) %>% summarise(min(SET_YEAR), max(SET_YEAR))
-  # BCo <- 
-  
-  BCo_aug19  %>%
+## use aug pull cause it has data pre 2003
+  BCo <-    read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))  %>%
     filter(START_LONGITUDE <= 0 & !is.na(CPUE_TRAPS) & !is.na(TOTAL_SABLE_WEIGHT) & 
              SABLE_SET_TYPE == 'OFFSHORE STANDARDIZED') %>%
     ## calc area including soak time
     mutate(AreaSwept_km2=CPUE_TRAPS*DURATION_MINUTES/10000, ## to put on same scale as others
-           TRIP_ID2 = paste(SET_YEAR,START_LATITUDE, START_LONGITUDE)) %>%
-    group_by(SET_YEAR) %>% summarise(n = n())
+           TRIP_ID2 = paste(SET_YEAR,START_LATITUDE, START_LONGITUDE)) 
   
   
   Data3b <- ThorsonUtilities::rename_columns( BCo[,c("TRIP_ID2", 'SABLE_SET_TYPE','SET_YEAR','START_LATITUDE','START_LONGITUDE','AreaSwept_km2',"TOTAL_SABLE_WEIGHT","VESSEL_ID")],
