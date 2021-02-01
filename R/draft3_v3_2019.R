@@ -1,15 +1,16 @@
 # remotes::install_github("james-thorson/VAST@749177f30e423f2160a24f1c81326b75925d4226") ## This is a commit on 13 Jan; not as confident
 
 ## using SHA keys from run on 2020-01-23 in hopes of correcting spatial_list
-## when prompted i rejected all updates
-# remotes::install_github("james-thorson/VAST@deca9d5d3e4efc81088362a7113489ad0a13ac0e") ## we want the version from 2019-07-25
+## when prompted reject all updates
+# remove.packages('VAST'); remove.packages('FishStatsUtils')
 # remotes::install_github("james-thorson/FishStatsUtils@8b428274b7abeace2a905714ddb836c5892d727e")
+# remotes::install_github("james-thorson/VAST@deca9d5d3e4efc81088362a7113489ad0a13ac0e") ## we want the version from 2019-08-26
 
 library(VAST)
 library(TMB)
 library(dplyr)
 library(tidyr)
-library(reshape)
+library(reshape2)
 library(mapdata)
 library(ggplot2)
 # library(nwfscSurvey)
@@ -22,7 +23,7 @@ library(here)
 # catch = PullCatch.fn(Name = "sablefish", SurveyName = "Triennial", SaveFile = TRUE, Dir = here("data")) 
 
 # Directories ----
-comp.name <- c("mkapur",'maia kapur')[2]
+comp.name <- c("mkapur",'maia kapur')[1]
 RootFile <- here('runs')
 DataFile  <- here('data')
 
@@ -38,7 +39,7 @@ Surveys_to_include <- c("Triennial", "WCGBTS", "BCs", "BCo",
 
 # Date
 Date <- Sys.Date()
-BaseQ <- c("GOA_late", "AK_DOM_LL","WCGBTS")[3]
+BaseQ <- c("GOA_late", "AK_DOM_LL","WCGBTS")[2]
 Year_Range = c(1980, 2019)
 
 DateFile <- paste0(RootFile,"/",Date,"_nx=",n_x,"_", 
@@ -50,7 +51,7 @@ dir.create(DateFile)
 FieldConfig = matrix( c("Omega1"=1, "Epsilon1"=1, "Omega2"=1, 
                         "Epsilon2"=1, "Beta1"="IID", "Beta2"="IID"), nrow=3, byrow=TRUE )
 Aniso = FALSE
-Version = "VAST_v8_0_0" # get_latest_version( package="VAST" )
+Version = c("VAST_v12_0_0","VAST_v8_0_0")[1] # get_latest_version( package="VAST" )
 OverdispersionConfig = c("Eta1"=0, "Eta2"=0)
 ObsModel <- c(2,0) ## gamma for catch, pos only for enctr  # 0=normal (log-link); 1=lognormal; 2=gamma; 4=ZANB; 5=ZINB; 11=lognormal-mixture; 12=gamma-mixture
 Spatial_Smoother = c("Index", "Smoothed_Index", "Spatiotemporal", "Spatiotemporal_AR")[3]
@@ -347,6 +348,7 @@ Spatial_List <- make_spatial_info( n_x=n_x,
 save(Spatial_List, file = paste0(DateFile,"/Spatial_List.Rdata"))
 
 # Plot location of data
+
 png(paste0(DateFile,"/Extrapolation_List.png"), width = 8, height = 6, units = 'in', res = 520)
 plot( Extrapolation_List ) 
 dev.off()
@@ -409,14 +411,14 @@ TmbData <- VAST::make_data(
   "Options"=Options )
 
 save(TmbData, file = paste0(DateFile,"/TmbData.Rdata"))
-
+#https://github.com/kaskr/adcomp/issues/321
 # Make TMB object
 TmbList <-
   make_model(
     "build_model" = TRUE,
     "TmbData" = TmbData,
     "RunDir" = DateFile,
-    "Version" = Version,
+    "Version" =Version, ## paste from documents/r/winlibrary/vast/
     "RhoConfig" = RhoConfig,
     "loc_x" = Spatial_List$loc_x,
     "Method" = Method,
