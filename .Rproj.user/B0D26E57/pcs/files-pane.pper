@@ -1,13 +1,13 @@
 {
-    "path" : "C:/Users/Maia Kapur/Dropbox/UW/sab-idx/runs/2020-12-13_nx=1000_Triennial_WCGBTS_BCs_BCo_AK_DOM_LL_GOA_baseQ=WCGBTS1980_2019",
+    "path" : "C:/Users/Maia Kapur/Dropbox/UW/sab-mse",
     "sortOrder" : [
-        {
-            "ascending" : false,
-            "columnIndex" : 4
-        },
         {
             "ascending" : true,
             "columnIndex" : 2
+        },
+        {
+            "ascending" : false,
+            "columnIndex" : 4
         }
     ]
 }
