@@ -81,7 +81,7 @@ Opt <- TMBhelper::fit_tmb(
   newtonsteps = 1,
   getsd = TRUE,
   getJointPrecision = FALSE, ## required for SIMULATOR
-  bias.correct = TRUE, ## could try false
+  bias.correct = FALSE, ## could try false
   bias.correct.control = list(vars_to_correct = "Index_cyl"),
   savedir = outfile
 )  
