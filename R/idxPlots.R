@@ -39,7 +39,13 @@ Index <- plot_biomass_index( DirName=paste0(outfile,"/"),
 
 cat('ran plot_biomass_index \n')
 
-assc <- read.csv(here("data","assc.csv"))
+assc <- read.csv(here("data","assc.csv")) %>% filter(Fleet2 != "BC") ## custom bc
+bcidx <- read.csv(here('data','BC','bcom_indexseries.csv')) %>% 
+  melt(id = "YEAR") %>% filter(variable != "nominal.Trap.CPUE") %>%
+  mutate(value = value*1000) %>%
+  mutate(SD_log = NA, TYPE = NA, Source = 'assessment', Fleet2 = 'BC', uci = NA, lci = NA)
+names(bcidx)[1:3] <-c('Year','Fleet','Estimate_metric_tons')
+assc <- rbind(assc, bcidx )
 
 ## see line 81 here for conv https://github.com/James-Thorson-NOAA/FishStatsUtils/blob/master/R/plot_index.R
 vastc <-
@@ -67,8 +73,10 @@ if(BaseQ != 'AK_DOM_LL'){
   cat('multiplied est and lci by 1000 \n')
 }
 
+## custnames must match the order they appear on the plot
 
-fleetSel <- c(1:4,6,7,10,8,11,12)
+# fleetSel <- c(1:4,6,7,10,8,11,12)
+fleetSel <- c(6,7,10,4,2,1,3,11,8,9)
 
 custnames <-
   c(
@@ -77,15 +85,14 @@ custnames <-
       c(
         'California Current',
         'British Columbia',
-        'Aleutian Islands',
         'Gulf of Alaska',
+        'Aleutian Islands',
         'Eastern Bering Sea'
       )
     ),
     'AK Domestic Longline',
     "AK Gulf Trawl",
     'BC Offshore Standardized',
-    'BC Synoptic Trawl',
     'BC Trap Stratified',
     'Triennial',
     'WCGBTS'
@@ -94,16 +101,23 @@ custnames <-
 
 ## compare_all plot ----
 rbind(vastc,assc) %>%
-  filter(Fleet2 %in% c('WC','BC', 'AK')[1:3]) %>%
-  filter(Fleet %in% c("California_current","British_Columbia",
-                      'Aleutian_Islands',"Gulf_of_Alaska",
-                      "Eastern_Bering_Sea",
-                      'AK_DOM_LL',"AK_GOA_TRW",'BC_OFFSHORE_STD',
-                      "Filter_BCTrawl","Filter_StRS", "AKSHLF",  "NWCBO")[fleetSel]) %>%
+  filter(Estimate_metric_tons >0 )%>%
+  filter(Fleet %in% c("California_current",
+                      "British_Columbia",
+                      'Aleutian_Islands',
+                      "Gulf_of_Alaska",
+                      'AK_DOM_LL',
+                      "AK_GOA_TRW",
+                      'std..survey',
+                      "StRS.survey",
+                      "AKSHLF", 
+                      "NWCBO")) %>%
   # filter(Fleet %in% c("British_Columbia","Filter_BCTrawl")) %>%
   ggplot(., aes(x = Year, y = Estimate_metric_tons, 
-                col = Fleet, linetype = Fleet)) +
-  theme_bw()+
+                col = Fleet, 
+                shape = tolower(Source),
+                linetype = tolower(Source))) +
+  theme_sleek()+
   # kaputils::theme_black()+
   theme(panel.grid = element_blank(),
         legend.position = 'right',
@@ -112,24 +126,27 @@ rbind(vastc,assc) %>%
           size = 16
         )) +  
   geom_line(lwd = 1) +
+  # geom_point(show.legend = FALSE) +
   geom_ribbon(aes(ymin = lci, ymax = uci, fill = Fleet), 
-              alpha = 0.15, col = 'grey',
+              alpha = 0.15,
+              col = 'grey',
               show.legend = FALSE) +
   scale_x_continuous(limits = c(1980,2020),
                      breaks = seq(1980,2020,10)) +
-  scale_fill_manual(values = c(rep('blue',3), 'dodgerblue3',
-                               cbbPalette),
+  scale_fill_manual(values = c(survfltPal[c(1,2,9)],
+                              'blue','blue','blue','dodgerblue3',
+                              survfltPal[c(8,4,5)]),
                     labels = c(custnames)) +
-  scale_color_manual( values = c(rep('blue',3), 'dodgerblue3',
-                                 cbbPalette),
-                      labels = c(custnames)) +
-  scale_linetype_manual(values = c(rep('solid',4),
-                                   rep('dashed',40)),
-                        labels = c(custnames)) +
+  scale_color_manual( values = c(survfltPal[c(1,2,9)],
+                                 'blue','blue','blue','dodgerblue3',
+                                 survfltPal[c(8,4,5)]),
+                                 labels = c(custnames)) +
+  scale_linetype_manual(values = c('dotted','solid')) +
+  # scale_shape_manual(values = c(19,NA)) +
   labs(x = 'Year', y = 'Estimate (mt)', color = "", linetype = "",
        title = '',
-       subtitle = 'All VAST Estimates have been multiplied by 1000;
-       (input dat was div by 1000)') +
+       subtitle = ifelse(BaseQ != 'AK_DOM_LL','All VAST Estimates have been multiplied by 1000;
+       (input dat was div by 1000)',"")) +
   
   facet_wrap(~Fleet2, scales = 'free_y', ncol = 3)
 
