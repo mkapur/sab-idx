@@ -13,7 +13,7 @@ require(dplyr)
 ## loading datasets made with draft3_v3_2019; last saved Jan 30
 list.files(here('input'), full.names = T) %>% lapply(.,load, .GlobalEnv)
 
-Record$BaseQ <- c("GOA_late", "AK_DOM_LL","WCGBTS")[2]
+Record$BaseQ <- c("GOA_late", "AK_DOM_LL","WCGBTS")[3]
 Record$n_x <- 500
 Record$Version <- "VAST_v12_0_0"
 
@@ -95,6 +95,6 @@ Save <- list("Opt"=Opt,
              "Report"=Report,
              "ParHat"=TmbList$Obj$env$parList(Opt$par),
              'Obj' = Obj)
-save(Save, file=paste0(DateFile,"Save_original.RData"))
+save(Save, file=paste0(outfile,"/Save_original.RData"))
 
 source(here('R','idxPlots.R')) ## automates all plots
