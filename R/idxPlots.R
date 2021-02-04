@@ -9,11 +9,41 @@ survfltPal <- paste0("#",c("00496f","086788","0f85a0","7eae73","edd746",
                            "edb123","ed8b00","e56612","E1541B","dd4124"))
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
+Surveys_to_include <- c("Triennial", "WCGBTS", "BCs", "BCo",
+                        "BCt", "AK_DOM_LL", "GOA", "EBS")[c(1:4,6:7)] #This will only work for years after 2003
+
+
+Region <- NULL 
+## This is Thorson's -- Kelli had a way of pre-subsetting to have N/S embedded
+# if( TRUE ){
+if(any(c("WCGBTS","Triennial") %in% Surveys_to_include)) Region = c( Region, "California_current")
+if("BCs" %in% Surveys_to_include | "BCt" %in% Surveys_to_include) Region = c( Region, "British_Columbia" )
+if("GOA" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska" )
+if("GOA" %in% Surveys_to_include) Region = c( Region, "Aleutian_Islands" )
+
+if("EBS"  %in% Surveys_to_include) Region = c( Region, "Eastern_Bering_Sea" )
+if("AK_DOM_LL" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska", "Eastern_Bering_Sea" )
+
+
+
+Year_Set <- min(Data_Geostat[,'Year']):max(Data_Geostat[,'Year'])
+# Plot index
+Index <- plot_biomass_index( DirName=paste0(outfile,"/"), 
+                             TmbData=TmbData, 
+                             use_biascorr = FALSE,
+                             Sdreport=Opt$SD, 
+                             Year_Set=Year_Set, 
+                             strata_names=c('AllAreas',Region), 
+                             plot_log=TRUE, 
+                             width=6, height=6 ) # , total_area_km2=sum(a_xl[,1])
+
+cat('ran plot_biomass_index \n')
+
 assc <- read.csv(here("data","assc.csv"))
 
 ## see line 81 here for conv https://github.com/James-Thorson-NOAA/FishStatsUtils/blob/master/R/plot_index.R
 vastc <-
-  read.csv(paste0(outfile,"Table_for_SS3.csv")) %>%
+  read.csv(paste0(outfile,"/Table_for_SS3.csv")) %>%
   mutate(TYPE = 'Abundance', Source = 'VAST',
          lci = Estimate_metric_tons-SD_mt,
          uci = Estimate_metric_tons+SD_mt) %>%
@@ -114,16 +144,7 @@ plot_data( Extrapolation_List=Extrapolation_List, Spatial_List=Spatial_List,
            Data_Geostat=Data_Geostat, PlotDir=outfile, 
            Plot1_name="Data_and_knots.png", Plot2_name="Data_by_year.png", col="red")
 cat('ran plot_data \n')
-# Plot index
-Index <- plot_biomass_index( DirName=outfile, 
-                             TmbData=TmbData, 
-                             use_biascorr = BiasCorr,
-                             Sdreport=Opt$SD, 
-                             Year_Set=Year_Set, 
-                             strata_names=c('AllAreas',Region), 
-                             plot_log=TRUE, width=6, height=6 ) # , total_area_km2=sum(a_xl[,1])
 
-cat('ran plot_biomass_index \n')
 
 plot_range_index( Sdreport=Opt$SD, Report=Report, Year_Set=Year_Set, TmbData=TmbData, 
                   Znames=colnames(TmbData$Z_xm), PlotDir=outfile )
@@ -137,24 +158,21 @@ cat('ran plot_anisotropy \n')
 # plot_quantile_diagnostic( Report=Report, TmbData=TmbData, outfile=outfile)
 
 # Positive catch rate diagnostics
-Q <- plot_quantile_diagnostic( TmbData=TmbData, Report=Report, outfile=outfile ) # SpatialDeltaGLMM::
-save(Q, file = paste0(outfile,'Q.rdata'))
-cat('ran & saved Q \n')
-
-# Pearson residuals diagnostics
-plot_residuals( Lat_i=Data_Geostat[,'Lat'], Lon_i=Data_Geostat[,'Lon'], 
-                extrapolation_list = Extrapolation_List,
-                TmbData=TmbData, Report=Report, Q=Q, savedir=outfile, spatial_list=Spatial_List )
-cat('ran plot_residuals \n')
+# Q <- SpatialDeltaGLMM::plot_quantile_diagnostic( TmbData=TmbData, Report=Report ) # 
+# save(Q, file = paste0(outfile,'Q.rdata'))
+# cat('ran & saved Q \n')
+# 
+# # Pearson residuals diagnostics
+# plot_residuals( Lat_i=Data_Geostat[,'Lat'], Lon_i=Data_Geostat[,'Lon'], 
+#                 extrapolation_list = Extrapolation_List,
+#                 TmbData=TmbData, Report=Report, Q=Q, savedir=outfile, spatial_list=Spatial_List )
+# cat('ran plot_residuals \n')
 projargs_plot = "+proj=utm +datum=WGS84 +units=km +zone=3" ## gives spTransform error w latest fishstat
-
-
-
 plot_maps(
   plot_set = 3,
   Report = Save$Report,
   PlotDF = MapDetails_List[["PlotDF"]],
-  working_dir = outfile,
+  working_dir = paste0(outfile,"/"),
   Year_Set = Year_Set,
   Years2Include = (1:length(Year_Set))[Year_Set >1994 & Year_Set %%5==0],
   country = c("united states of america", "canada", "mexico", "russia", 'japan'),
@@ -167,18 +185,17 @@ cat('ran plot_maps \n')
 #To plot effective area occupied, please re-run with Options['Calculate_effective_area']=1
 plot_range_index( Sdreport=Save$Opt$SD, Report=Save$Report, Year_Set=Year_Set, 
                   TmbData=TmbData, Znames=colnames(TmbData$Z_xm),
-                  PlotDir=outfile 
-)
+                  PlotDir=paste0(outfile,"/") )
 cat('ran plot_range_index \n')
 
 # source("https://raw.githubusercontent.com/nwfsc-assess/VASTWestCoast/2473eb0ca2c25aa780e39ff1a94e7252d0d335bc/R/summary_nwfsc.R")
 source(here("R","summary_nwfscMK.R"))
 TableC <- summary_nwfscMK(obj = Save$Obj, 
                           sdreport = Save$Opt$SD, 
-                          savedir = outfile)[[3]]
+                          savedir = paste0(outfile,"/"))[[3]]
 
 TableC %>% data.frame() %>% 
   # exp() %>% 
   round(.,2) %>% 
   mutate('PAR'=row.names(TableC)) %>%
-  write.csv(.,file = paste0(outfile,'tableC_mod.csv'))
+  write.csv(.,file = paste0(outfile,'/tableC_mod.csv'))
