@@ -32,7 +32,7 @@ Data_Geostat %>%
   filter(Survey == 'BC_OffStd') %>%
   merge(., omsurv, by = 'Year') %>%
   merge(.,
-        filter(assc, Fleet == "BC_OFFSHORE_STD") %>%
+        filter(assc, Fleet == "std..survey") %>%
           select(Year, Estimate_metric_tons),
         by = 'Year')%>%
   select(Year, DataG = meanC, BC_EARLY, asscBC_OFFSHORE_STD = Estimate_metric_tons) %>%
