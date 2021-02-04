@@ -31,7 +31,12 @@ Data_Geostat %>%
   summarise(meanC = mean(Catch_KG), sdc = sd(Catch_KG)) %>%
   filter(Survey == 'BC_OffStd') %>%
   merge(., omsurv, by = 'Year') %>%
-  select(Year, meanC, BC_EARLY) %>%
+  merge(.,
+        filter(assc, Fleet == "BC_OFFSHORE_STD") %>%
+          select(Year, Estimate_metric_tons),
+        by = 'Year')%>%
+  select(Year, DataG = meanC, BC_EARLY, asscBC_OFFSHORE_STD = Estimate_metric_tons) %>%
+  # mutate(asscBC_OFFSHORE_STD/DataG)
   reshape2::melt(., id = 'Year') %>%
   ggplot(., aes(x = Year, y = log(value*10), color = variable)) +
   theme_sleek() +

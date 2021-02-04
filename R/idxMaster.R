@@ -13,7 +13,7 @@ require(dplyr)
 ## loading datasets made with draft3_v3_2019; last saved Jan 30
 list.files(here('input'), full.names = T) %>% lapply(.,load, .GlobalEnv)
 
-Record$BaseQ <- c("GOA_late", "AK_DOM_LL","WCGBTS")[3]
+Record$BaseQ <- c("GOA_late", "AK_DOM_LL","WCGBTS")[2]
 Record$n_x <- 500
 Record$Version <- "VAST_v12_0_0"
 
