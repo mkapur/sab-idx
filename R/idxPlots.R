@@ -159,7 +159,7 @@ cat('saved compare_idx.png \n')
 
 plot_data( Extrapolation_List=Extrapolation_List, Spatial_List=Spatial_List, 
            Data_Geostat=Data_Geostat, PlotDir=outfile, 
-           Plot1_name="Data_and_knots.png", Plot2_name="Data_by_year.png", col="red")
+           Plot1_name="/Data_and_knots.png", Plot2_name="/Data_by_year.png", col="red")
 cat('ran plot_data \n')
 
 
@@ -168,7 +168,7 @@ plot_range_index( Sdreport=Opt$SD, Report=Report, Year_Set=Year_Set, TmbData=Tmb
 cat('ran plot_range_index \n')
 
 # Plot Anisotropy
-plot_anisotropy( FileName=paste0(outfile,"Aniso.png"), Report=Report )
+plot_anisotropy( FileName=paste0(outfile,"/Aniso.png"), Report=Report )
 cat('ran plot_anisotropy \n')
 
 # Plot encounter rate diagnostics
