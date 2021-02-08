@@ -23,7 +23,7 @@ library(here)
 # catch = PullCatch.fn(Name = "sablefish", SurveyName = "Triennial", SaveFile = TRUE, Dir = here("data")) 
 
 # Directories ----
-comp.name <- c("mkapur",'maia kapur')[1]
+comp.name <- c("mkapur",'maia kapur')[2]
 RootFile <- here('runs')
 DataFile  <- here('data')
 
@@ -296,7 +296,7 @@ Data_Geostat <- Data_CPUE[which(Data_CPUE$Year>=Year_Range[1] & Data_CPUE$Year<=
 ## RESCALE THE DATA SO IT IS NOT HUGE
 Data_Geostat$Catch_KG <- Data_Geostat$Catch_KG/1000 #(Data_Geostat$Catch_KG - mean(Data_Geostat$Catch_KG))/sd(Data_Geostat$Catch_KG)
 Data_Geostat <- na.omit( Data_Geostat )
-save(Data_Geostat, file = paste0(DateFile,"/Data_Geostat.Rdata"))
+
 
 Data_Geostat %>% group_by(Survey) %>% dplyr::summarise(min(Year),max(Year))
 
@@ -313,7 +313,7 @@ if("GOA" %in% Surveys_to_include) Region = c( Region, "Aleutian_Islands" )
 
 if("EBS"  %in% Surveys_to_include) Region = c( Region, "Eastern_Bering_Sea" )
 if("AK_DOM_LL" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska", "Eastern_Bering_Sea" )
-
+save(Region, file = here("input",'Region.Rdata'))
 
 ## make extrapolation list ====
 Extrapolation_List <- make_extrapolation_info( Region=Region, 
@@ -374,7 +374,8 @@ if( any(EncNum_k==0) ){
   Spatial_List$knot_i = Spatial_List$knot_i[-Which2Remove]
   Data_Geostat[,'Survey'] = droplevels( Data_Geostat[,'Survey'] )
 }
-
+save(Data_Geostat, file = paste0(DateFile,"/Data_Geostat.Rdata"))
+# save(Data_Geostat, file =here('input',"/Data_Geostat.Rdata"))
 # Make catchability matrix (Q_i) ----
 # The resulting Q_ik will have n-1 columns, with baseQ excluded.
 
