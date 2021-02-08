@@ -11,9 +11,10 @@ require(VAST)
 require(dplyr)
 
 ## loading datasets made with draft3_v3_2019; last saved Jan 30
-list.files(here('input'), full.names = T) %>% lapply(.,load, .GlobalEnv)
+grep(list.files(path=here('input'), full.names = T), pattern=c('-dep|.png'), invert=TRUE, value=TRUE) %>% 
+  lapply(.,load, .GlobalEnv)
 
-Record$BaseQ <- c("GOA_late", "AK_DOM_LL","WCGBTS")[2]
+Record$BaseQ <- c("GOA_late", "AK_DOM_LL","WCGBTS")[1]
 Record$n_x <- 500
 Record$Version <- "VAST_v12_0_0"
 
@@ -36,6 +37,7 @@ if( length(unique(Data_Geostat[,'Survey']))==1  |
 }
 ncol(Q_ik) == (length(unique(Data_Geostat$Survey))-1) ## should have ncol == fleets-1
 
+save(Q_ik,file = paste0(outfile, "/Q_ik.Rdata"))
 
 TmbData <- VAST::make_data(
   #"X_itp"=X_itp, 
@@ -98,3 +100,4 @@ Save <- list("Opt"=Opt,
 save(Save, file=paste0(outfile,"/Save_original.RData"))
 
 source(here('R','idxPlots.R')) ## automates all plots
+
