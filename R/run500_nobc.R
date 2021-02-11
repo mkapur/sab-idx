@@ -28,7 +28,7 @@ RootFile <- here('runs')
 DataFile  <- here('data')
 
 # Resolution
-n_x <- 1000 #Number of stations
+n_x <- 500 #Number of stations
 
 # Choose species
 Species <- "Anoplopoma fimbria"
@@ -162,7 +162,7 @@ if( "BCs" %in% Surveys_to_include ){
 if( "BCo" %in% Surveys_to_include ){
   # Exclude PCOD monitoring survey, which is non-random
   # SpeciesCode = switch( Species, "arrowtooth flounder"='ARF_KG', "Pacific ocean perch"='POP_KG' )
-## use aug pull cause it has data pre 2003
+  ## use aug pull cause it has data pre 2003
   # 2010 can be dropped from the Offshore Standardized survey (it is considered suspect)
   BCo <-    read.csv(paste0(DataFile,"/BC/BC_sable_survey_data.Aug262019.csv"))  %>%
     filter(START_LONGITUDE <= 0 & 
@@ -355,7 +355,7 @@ dev.off()
 png(paste0(DateFile,"/Spatial_List.png"), width = 8, height = 6, units = 'in', res = 520)
 plot( Spatial_List ) ## double check that this looks like the hawaiian archipelago
 dev.off()
-  
+
 # Plot details
 MapDetails_List <- make_map_info( "Region"="Other", 
                                   "spatial_list"=Spatial_List, 
@@ -441,7 +441,7 @@ Opt <- TMBhelper::fit_tmb(
   newtonsteps = 1,
   getsd = TRUE,
   getJointPrecision = FALSE, ## required for SIMULATOR
-  bias.correct = TRUE, ## could try false
+  bias.correct = FALSE, ## could try false
   bias.correct.control = list(vars_to_correct = "Index_cyl"),
   savedir = DateFile
 )  # , rel.tol=1e-20
@@ -458,79 +458,82 @@ Save <- list("Opt"=Opt,
 save(Save, file=paste0(DateFile,"Save_original.RData"))
 
 ##Plots----
+# 
+# plot_data( Extrapolation_List=Extrapolation_List, Spatial_List=Spatial_List, 
+#            Data_Geostat=Data_Geostat, PlotDir=DateFile, 
+#            Plot1_name="Data_and_knots.png", Plot2_name="Data_by_year.png", col="red")
+# 
+# # Plot index
+# Index <- plot_biomass_index( DirName=DateFile, 
+#                              TmbData=TmbData, 
+#                              use_biascorr = BiasCorr,
+#                              Sdreport=Opt$SD, 
+#                              Year_Set=Year_Set, 
+#                              strata_names=c('AllAreas',Region), 
+#                              plot_log=TRUE, width=6, height=6 ) # , total_area_km2=sum(a_xl[,1])
+# 
+# 
+# # load(paste0(DateFile,"Save_original.Rdata"))
+# Opt <- Save$Opt
+# Report <- Save$Report
+# 
+# plot_range_index( Sdreport=Opt$SD, Report=Report, Year_Set=Year_Set, TmbData=TmbData, 
+#                   Znames=colnames(TmbData$Z_xm), PlotDir=DateFile )
+# 
+# # Plot Anisotropy
+# plot_anisotropy( FileName=paste0(DateFile,"Aniso.png"), Report=Report )
+# 
+# # Plot encounter rate diagnostics
+# # plot_quantile_diagnostic( Report=Report, TmbData=TmbData, DateFile=DateFile)
+# 
+# # Positive catch rate diagnostics
+# Q <- plot_quantile_diagnostic( TmbData=TmbData, Report=Report, DateFile=DateFile ) # SpatialDeltaGLMM::
+# save(Q, file = paste0(DateFile,'Q.rdata'))
+# # Pearson residuals diagnostics
+# plot_residuals( Lat_i=Data_Geostat[,'Lat'], Lon_i=Data_Geostat[,'Lon'], 
+#                 extrapolation_list = Extrapolation_List,
+#                 TmbData=TmbData, Report=Report, Q=Q, savedir=DateFile, spatial_list=Spatial_List )
+# 
+# projargs_plot = "+proj=utm +datum=WGS84 +units=km +zone=3" ## gives spTransform error w latest fishstat
+# # projargs_plot = "+proj=moll +lon_0=-150 +datum=WGS84 +units=km"
+# # projargs_plot = "+proj=longlat +lon_0=-180 +zone=3 +datum=WGS84 +units=km"
+# # projargs_plot = "+proj=longlat"
+# # projargs_plot = "+proj=natearth +lon_0=-150 +datum=WGS84 +units=km"
+# # devtools::source_url("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/fc564104b59999af7156b22dcca6c623e51cdd9a/R/plot_maps.r")
+# # use these two from Jan 10
+# devtools::source_url("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/b90c65bef7d25919cc3af7a257451ba25804f8df/R/plot_maps.r")
+# devtools::source_url("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/b90c65bef7d25919cc3af7a257451ba25804f8df/R/plot_variable.R")
+# 
+# 
+# plot_maps(
+#   plot_set = 3,
+#   Report = Save$Report,
+#   PlotDF = MapDetails_List[["PlotDF"]],
+#   working_dir = DateFile,
+#   Year_Set = Year_Set,
+#   Years2Include = (1:length(Year_Set))[Year_Set >1994 & Year_Set %%5==0],
+#   country = c("united states of america", "canada", "mexico", "russia", 'japan'),
+#   projargs = projargs_plot
+#   
+# )
+# 
+# ## plot easting-northing shifts
+# #To plot effective area occupied, please re-run with Options['Calculate_effective_area']=1
+# plot_range_index( Sdreport=Save$Opt$SD, Report=Save$Report, Year_Set=Year_Set, 
+#                   TmbData=TmbData, Znames=colnames(TmbData$Z_xm),
+#                   PlotDir=DateFile 
+# )
+# # source("https://raw.githubusercontent.com/nwfsc-assess/VASTWestCoast/2473eb0ca2c25aa780e39ff1a94e7252d0d335bc/R/summary_nwfsc.R")
+# source(here("R","summary_nwfscMK.R"))
+# TableC <- summary_nwfscMK(obj = Save$Obj, 
+#                           sdreport = Save$Opt$SD, 
+#                           savedir = DateFile)[[3]]
+# 
+# TableC %>% data.frame() %>% 
+#   # exp() %>% 
+#   round(.,2) %>% 
+#   mutate('PAR'=row.names(TableC)) %>%
+#   write.csv(.,file = paste0(DateFile,'tableC_mod.csv'))
 
-plot_data( Extrapolation_List=Extrapolation_List, Spatial_List=Spatial_List, 
-           Data_Geostat=Data_Geostat, PlotDir=DateFile, 
-           Plot1_name="Data_and_knots.png", Plot2_name="Data_by_year.png", col="red")
-
-# Plot index
-Index <- plot_biomass_index( DirName=DateFile, 
-                             TmbData=TmbData, 
-                             use_biascorr = BiasCorr,
-                             Sdreport=Opt$SD, 
-                             Year_Set=Year_Set, 
-                             strata_names=c('AllAreas',Region), 
-                             plot_log=TRUE, width=6, height=6 ) # , total_area_km2=sum(a_xl[,1])
-
-
-# load(paste0(DateFile,"Save_original.Rdata"))
-Opt <- Save$Opt
-Report <- Save$Report
-
-plot_range_index( Sdreport=Opt$SD, Report=Report, Year_Set=Year_Set, TmbData=TmbData, 
-                  Znames=colnames(TmbData$Z_xm), PlotDir=DateFile )
-
-# Plot Anisotropy
-plot_anisotropy( FileName=paste0(DateFile,"Aniso.png"), Report=Report )
-
-# Plot encounter rate diagnostics
-# plot_quantile_diagnostic( Report=Report, TmbData=TmbData, DateFile=DateFile)
-
-# Positive catch rate diagnostics
-Q <- plot_quantile_diagnostic( TmbData=TmbData, Report=Report, DateFile=DateFile ) # SpatialDeltaGLMM::
-save(Q, file = paste0(DateFile,'Q.rdata'))
-# Pearson residuals diagnostics
-plot_residuals( Lat_i=Data_Geostat[,'Lat'], Lon_i=Data_Geostat[,'Lon'], 
-                extrapolation_list = Extrapolation_List,
-                TmbData=TmbData, Report=Report, Q=Q, savedir=DateFile, spatial_list=Spatial_List )
-
-projargs_plot = "+proj=utm +datum=WGS84 +units=km +zone=3" ## gives spTransform error w latest fishstat
-# projargs_plot = "+proj=moll +lon_0=-150 +datum=WGS84 +units=km"
-# projargs_plot = "+proj=longlat +lon_0=-180 +zone=3 +datum=WGS84 +units=km"
-# projargs_plot = "+proj=longlat"
-# projargs_plot = "+proj=natearth +lon_0=-150 +datum=WGS84 +units=km"
-# devtools::source_url("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/fc564104b59999af7156b22dcca6c623e51cdd9a/R/plot_maps.r")
-# use these two from Jan 10
-devtools::source_url("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/b90c65bef7d25919cc3af7a257451ba25804f8df/R/plot_maps.r")
-devtools::source_url("https://raw.githubusercontent.com/James-Thorson-NOAA/FishStatsUtils/b90c65bef7d25919cc3af7a257451ba25804f8df/R/plot_variable.R")
-
-
-plot_maps(
-  plot_set = 3,
-  Report = Save$Report,
-  PlotDF = MapDetails_List[["PlotDF"]],
-  working_dir = DateFile,
-  Year_Set = Year_Set,
-  Years2Include = (1:length(Year_Set))[Year_Set >1994 & Year_Set %%5==0],
-  country = c("united states of america", "canada", "mexico", "russia", 'japan'),
-  projargs = projargs_plot
-
-)
-
-## plot easting-northing shifts
-#To plot effective area occupied, please re-run with Options['Calculate_effective_area']=1
-plot_range_index( Sdreport=Save$Opt$SD, Report=Save$Report, Year_Set=Year_Set, 
-                  TmbData=TmbData, Znames=colnames(TmbData$Z_xm),
-                  PlotDir=DateFile 
-)
-# source("https://raw.githubusercontent.com/nwfsc-assess/VASTWestCoast/2473eb0ca2c25aa780e39ff1a94e7252d0d335bc/R/summary_nwfsc.R")
-source(here("R","summary_nwfscMK.R"))
-TableC <- summary_nwfscMK(obj = Save$Obj, 
-                          sdreport = Save$Opt$SD, 
-                          savedir = DateFile)[[3]]
-
-TableC %>% data.frame() %>% 
-  # exp() %>% 
-  round(.,2) %>% 
-  mutate('PAR'=row.names(TableC)) %>%
-  write.csv(.,file = paste0(DateFile,'tableC_mod.csv'))
+outfile = DateFile
+source(here('R','idxPlots.R')) ## automates all plots

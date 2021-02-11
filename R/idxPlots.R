@@ -9,20 +9,20 @@ survfltPal <- paste0("#",c("00496f","086788","0f85a0","7eae73","edd746",
                            "edb123","ed8b00","e56612","E1541B","dd4124"))
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-Surveys_to_include <- c("Triennial", "WCGBTS", "BCs", "BCo",
-                        "BCt", "AK_DOM_LL", "GOA", "EBS")[c(1:4,6:7)] #This will only work for years after 2003
-
-
-Region <- NULL 
-## This is Thorson's -- Kelli had a way of pre-subsetting to have N/S embedded
-# if( TRUE ){
-if(any(c("WCGBTS","Triennial") %in% Surveys_to_include)) Region = c( Region, "California_current")
-if("BCs" %in% Surveys_to_include | "BCt" %in% Surveys_to_include) Region = c( Region, "British_Columbia" )
-if("GOA" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska" )
-if("GOA" %in% Surveys_to_include) Region = c( Region, "Aleutian_Islands" )
-
-if("EBS"  %in% Surveys_to_include) Region = c( Region, "Eastern_Bering_Sea" )
-if("AK_DOM_LL" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska", "Eastern_Bering_Sea" )
+# Surveys_to_include <- c("Triennial", "WCGBTS", "BCs", "BCo",
+#                         "BCt", "AK_DOM_LL", "GOA", "EBS")[c(1:4,6:7)] #This will only work for years after 2003
+# 
+# 
+# Region <- NULL 
+# ## This is Thorson's -- Kelli had a way of pre-subsetting to have N/S embedded
+# # if( TRUE ){
+# if(any(c("WCGBTS","Triennial") %in% Surveys_to_include)) Region = c( Region, "California_current")
+# if("BCs" %in% Surveys_to_include | "BCt" %in% Surveys_to_include) Region = c( Region, "British_Columbia" )
+# if("GOA" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska" )
+# if("GOA" %in% Surveys_to_include) Region = c( Region, "Aleutian_Islands" )
+# 
+# if("EBS"  %in% Surveys_to_include) Region = c( Region, "Eastern_Bering_Sea" )
+# if("AK_DOM_LL" %in% Surveys_to_include) Region = c( Region, "Gulf_of_Alaska", "Eastern_Bering_Sea" )
 
 
 
@@ -71,8 +71,11 @@ if(BaseQ != 'AK_DOM_LL'){
   vastc$uci <- vastc$uci*1000
   vastc$lci <- vastc$lci*1000
   cat('multiplied est and lci by 1000 \n')
-}
-
+} 
+vastc$Estimate_metric_tons[vastc$Fleet2 =='WC'] <- 
+  vastc$Estimate_metric_tons[vastc$Fleet2 =='WC']/1000
+vastc$uci[vastc$Fleet2 =='WC'] <- vastc$uci[vastc$Fleet2 =='WC']/1000
+vastc$lci[vastc$Fleet2 =='WC'] <- vastc$lci[vastc$Fleet2 =='WC']/1000
 ## custnames must match the order they appear on the plot
 
 # fleetSel <- c(1:4,6,7,10,8,11,12)
@@ -126,8 +129,7 @@ rbind(vastc,assc) %>%
           size = 16
         )) +  
   geom_line(lwd = 1) +
-  # geom_point(show.legend = FALSE) +
-  geom_ribbon(aes(ymin = lci, ymax = uci, fill = Fleet), 
+  geom_ribbon(aes(ymin = lci, ymax = uci, fill = Fleet),
               alpha = 0.15,
               col = 'grey',
               show.legend = FALSE) +
@@ -145,9 +147,7 @@ rbind(vastc,assc) %>%
   # scale_shape_manual(values = c(19,NA)) +
   labs(x = 'Year', y = 'Estimate (mt)', color = "", linetype = "",
        title = '',
-       subtitle = ifelse(BaseQ != 'AK_DOM_LL','All VAST Estimates have been multiplied by 1000;
-       (input dat was div by 1000)',"")) +
-  
+       subtitle = 'WC Div by 1000') +
   facet_wrap(~Fleet2, scales = 'free_y', ncol = 3)
 
 
