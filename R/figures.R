@@ -238,6 +238,8 @@ custnames <- c(paste0('VAST ',c('California Current','British Columbia',
                'Triennial','WCGBTS')[fleetSel]
 
 
+
+
 ## compare_all plot ----
 rbind(vastc,assc) %>%
   filter(Fleet2 %in% c('WC','BC', 'AK')[1:3]) %>%
@@ -286,7 +288,7 @@ rbind(vastc,assc) %>%
        height = 8, width = 12, unit='in',dpi = 320)
   
   
-  
+
   
 
 vastc %>% group_by(Fleet) %>% summarise(mean(exp(SD_log)))                          

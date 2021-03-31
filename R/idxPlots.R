@@ -33,7 +33,7 @@ Index <- plot_biomass_index( DirName=paste0(outfile,"/"),
                              use_biascorr = FALSE,
                              Sdreport=Opt$SD, 
                              Year_Set=Year_Set, 
-                             strata_names=c('AllAreas',Region), 
+                             strata_names=c("All_Areas",Region), 
                              plot_log=TRUE, 
                              width=6, height=6 ) # , total_area_km2=sum(a_xl[,1])
 
@@ -72,14 +72,15 @@ if(BaseQ != 'AK_DOM_LL'){
   vastc$lci <- vastc$lci*1000
   cat('multiplied est and lci by 1000 \n')
 } 
-vastc$Estimate_metric_tons[vastc$Fleet2 =='WC'] <- 
-  vastc$Estimate_metric_tons[vastc$Fleet2 =='WC']/1000
-vastc$uci[vastc$Fleet2 =='WC'] <- vastc$uci[vastc$Fleet2 =='WC']/1000
-vastc$lci[vastc$Fleet2 =='WC'] <- vastc$lci[vastc$Fleet2 =='WC']/1000
+# vastc$Estimate_metric_tons[vastc$Fleet2 =='WC'] <- 
+#   vastc$Estimate_metric_tons[vastc$Fleet2 =='WC']/1000
+# vastc$uci[vastc$Fleet2 =='WC'] <- vastc$uci[vastc$Fleet2 =='WC']/1000
+# vastc$lci[vastc$Fleet2 =='WC'] <- vastc$lci[vastc$Fleet2 =='WC']/1000
 ## custnames must match the order they appear on the plot
 
 # fleetSel <- c(1:4,6,7,10,8,11,12)
-fleetSel <- c(6,7,10,4,2,1,3,11,8,9)
+# fleetSel <- c(6,7,10,4,2,1,3,11,8,9)
+fleetSel <- c(6,7,10,11,4,3,8,9,1)
 
 custnames <-
   c(
@@ -147,7 +148,7 @@ rbind(vastc,assc) %>%
   # scale_shape_manual(values = c(19,NA)) +
   labs(x = 'Year', y = 'Estimate (mt)', color = "", linetype = "",
        title = '',
-       subtitle = 'WC Div by 1000') +
+       subtitle = 'AK ONLY') +
   facet_wrap(~Fleet2, scales = 'free_y', ncol = 3)
 
 
@@ -156,6 +157,76 @@ ggsave(plot = last_plot(),
        file = paste0(outfile,"/compare_idx.png"),
        height = 8, width = 12, unit='in',dpi = 320)
 cat('saved compare_idx.png \n')
+
+
+
+## compare_all STITCH ----
+omvals <- read.csv("C:/Users/mkapur/Dropbox/UW/sab-mse/input/input_data/om_indices_STITCH.csv") %>%
+  mutate(Year = 1960:2019 ) %>%
+  melt(id = 'Year') %>% mutate(Fleet2 = substr(variable,1,2)) %>%
+  filter(value > -1) %>% select(Year, Fleet = variable, Fleet2 ,value)
+omsig <- read.csv("C:/Users/mkapur/Dropbox/UW/sab-mse/input/input_data/om_indices_sigma_STITCH.csv")%>%
+  mutate(Year = 1960:2019) %>%
+  melt(id = 'Year') %>% filter(value > -1) %>%
+  select(Year, Fleet = variable, sd = value)
+
+om = merge(omvals, omsig, by = c('Year','Fleet')) %>%
+  mutate(SRC = 'VAST') %>%
+  mutate( lci = value-sd*value, uci = value+sd*value) %>%
+  select(Year, Fleet, Fleet2, value, lci, uci, SRC)
+
+om$value[om$Fleet == 'WC_VAST'] <- om$value[om$Fleet == 'WC_VAST']*1000
+om$lci[om$Fleet == 'WC_VAST'] <- om$lci[om$Fleet == 'WC_VAST']*1000
+om$uci[om$Fleet == 'WC_VAST'] <- om$uci[om$Fleet == 'WC_VAST']*1000
+
+assc %>% select(Year, Fleet,Fleet2, value = Estimate_metric_tons, lci, uci) %>%
+  filter(Fleet %in% c("California_current",
+                      "British_Columbia",
+                      'Aleutian_Islands',
+                      "Gulf_of_Alaska",
+                      "Eastern_Bering_Sea",
+                      'AK_DOM_LL',
+                      "AK_GOA_TRW",
+                      'BC_OFFSHORE_STD',
+                      # "Filter_BCTrawl",
+                      "Filter_StRS", "AKSHLF",  "NWCBO")[fleetSel]) %>%
+  mutate(SRC = 'ASS') %>%
+  filter(Fleet2 != 'BC') %>% ## dont need bc here cause using og
+  rbind(., om)  %>%
+  ggplot(., aes(x = Year, y = value, col = Fleet, linetype = SRC)) +
+  theme_sleek()+
+  # kaputils::theme_black()+
+  theme(panel.grid = element_blank(),
+        legend.position = 'right',
+        legend.text = element_text(size = 12),
+        strip.text.x = element_text(
+          size = 16
+        )) +  
+  geom_line(lwd = 1) +
+  geom_ribbon(aes(ymin = lci, ymax = uci, fill = Fleet), 
+              alpha = 0.15, col = 'white',
+              show.legend = FALSE) +
+  scale_x_continuous(limits = c(1980,2020),
+                     breaks = seq(1980,2020,10)) +
+  scale_fill_manual(values = c(rep('black',3),
+                               survfltPal),
+                    labels = c(custnames)) +
+  scale_color_manual( values = c(rep('black',3),
+                                 survfltPal),
+                      labels = c(custnames)) +
+  scale_linetype_manual(values = c("solid","dashed"),
+  guide = FALSE) +
+  labs(x = 'Year', y = 'Relative Abundance (mt)', color = "", linetype = "",
+       title = '',
+       subtitle = 'WC Estimates multiplied by 1000') +
+  facet_wrap(~Fleet2, scales = 'free_y', ncol = 3)
+
+ggsave(plot = last_plot(),
+       # file = paste0("./figures/",Sys.Date(),"_idx_comparison.png"),
+       file ="C:/Users/mkapur/Dropbox/UW/sab-mse/input/input_data/input_figs/compare_all_stich.png",
+       height = 8, width = 12, unit='in',dpi = 320)
+cat('saved compare_idx.png \n')
+
 
 plot_data( Extrapolation_List=Extrapolation_List, Spatial_List=Spatial_List, 
            Data_Geostat=Data_Geostat, PlotDir=outfile, 
@@ -216,3 +287,4 @@ TableC %>% data.frame() %>%
   round(.,2) %>% 
   mutate('PAR'=row.names(TableC)) %>%
   write.csv(.,file = paste0(outfile,'/tableC_mod.csv'))
+

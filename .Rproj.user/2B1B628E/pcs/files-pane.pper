@@ -1,13 +1,13 @@
 {
-    "path" : "C:/Users/mkapur/Dropbox/UW/sab-idx",
+    "path" : "C:/Users/mkapur/Dropbox/UW/sab-idx/runs/deprecated/2020-09-22_nx=250_Triennial_WCGBTS_BCs_BCo_AK_DOM_LL_GOA_baseQ=AK_DOM_LL1980_2019",
     "sortOrder" : [
-        {
-            "ascending" : true,
-            "columnIndex" : 2
-        },
         {
             "ascending" : false,
             "columnIndex" : 4
+        },
+        {
+            "ascending" : true,
+            "columnIndex" : 2
         }
     ]
 }
