@@ -29,7 +29,7 @@ ak <- read.csv(here('runs','2021-02-12_nx=500_AK_DOM_LL_GOA_baseQ=AK_DOM_LL1980_
 wc <- read.csv(here('runs','2021-02-12_nx=500_Triennial_WCGBTS_baseQ=WCGBTS1980_2019',
                     'Table_for_SS3.csv'))
 
-with(ak, plot(Year ~ Estimate_metric_tons, col =  factor(Fleet)))
+with(ak, plot(Year , Estimate_metric_tons, col =  factor(Fleet)))
 legend('topright', legend = unique(ak$Fleet), col = factor( unique(ak$Fleet)), pch = 1)
 
 
