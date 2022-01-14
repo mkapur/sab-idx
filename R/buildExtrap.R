@@ -77,7 +77,7 @@ ggplot(region, aes(x = Lon, y = Lat, col = factor(Region_Name),fill = factor(Reg
 
 ggsave(last_plot(), 
        file = here('figures','user_region.png'),
-       height = 7, width = 7, unit = 'in',dpi = 400)  
+       height = 5, width = 7, unit = 'in',dpi = 400)  
 
 
 ### Show how to run it in VAST
