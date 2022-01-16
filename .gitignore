@@ -1,5 +1,5 @@
 *runs/*
-*-deprecated
+*-dep*
 *writing/*
 *presentations/*
 *.pper
@@ -31,3 +31,4 @@
 *.pper
 .RData
 *Rhistory*
+vast-examples/SAB2021-update-VAST-SAVE.RData
