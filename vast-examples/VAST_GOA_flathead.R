@@ -28,8 +28,9 @@ Data_Geostat$Catch_KG[which(is.na(Data_Geostat$Catch_KG))] <- 0
 
 
 # Define strata
-strata.limits <- data.frame(STRATA = as.factor('All_areas'))
+# strata.limits <- data.frame(STRATA = as.factor('All_areas'))
 #strata.limits <- data.frame('STRATA' = "west_of_140W", 'west_border' = -Inf, 'east_border' = -140 )
+
 FieldConfig = matrix( c("IID","IID","IID","IID","IID","IID"), ncol=2, nrow=3, dimnames=list(c("Omega","Epsilon","Beta"),c("Component_1","Component_2")) )
 RhoConfig  = c("Beta1" = 0, "Beta2" = 0, "Epsilon1" = 0, "Epsilon2" = 0)
 
