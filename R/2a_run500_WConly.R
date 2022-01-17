@@ -21,7 +21,7 @@ strata.limits = data.frame('STRATA' = c('C1','C2'), 'north_border' = c(36,50), '
 settings <- make_settings( Version = "VAST_v13_1_0",
                           n_x = 500,#1000, 
                           Region =  "california_current",
-                          purpose = "index2", 
+                          purpose = "index", #index 2 is recommended BUT doesn't provide annual estimates
                           fine_scale = TRUE, 
                           ObsModel= c(2,0), #c(2,1), #c(1,1) #c(10,2)
                           strata.limits=strata.limits,
