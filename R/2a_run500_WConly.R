@@ -18,20 +18,24 @@ RhoConfig = c("Beta1"=3, "Beta2"=3, "Epsilon1"=2, "Epsilon2"=2)
 
 strata.limits = data.frame('STRATA' = c('C1','C2'), 'north_border' = c(36,50), 'south_border' = c(25,36))
 # Make settings 
-settings <- make_settings( Version = "VAST_v13_1_0",
+settings <- make_settings( Version = "VAST_v12_0_0",
                           n_x = 500,#1000, 
                           Region =  "california_current",
-                          purpose = "index", #index 2 is recommended BUT doesn't provide annual estimates
+                          purpose = "index2", #index 2 is recommended BUT doesn't provide annual estimates
                           fine_scale = TRUE, 
                           ObsModel= c(2,0), #c(2,1), #c(1,1) #c(10,2)
                           strata.limits=strata.limits,
+                          treat_nonencounter_as_zero =FALSE,
+                          RhoConfig = RhoConfig,
+                          FieldConfig = FieldConfig,
                           knot_method = "grid", 
                           bias.correct = TRUE,
+                          vars_to_correct = list(vars_to_correct = "Index_cyl"),
                           use_anisotropy = TRUE)
 gc()
 
 
-wkdir <-  here('runs',paste0(Sys.Date(),"-WC_500/"))
+wkdir <-  here('runs',paste0(Sys.Date(),"-WC_500-nonEncounter-v12/"))
 dir.create(wkdir)
 # Run model
 fit <- fit_model( "settings"=settings, 
