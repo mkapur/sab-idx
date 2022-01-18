@@ -11,9 +11,9 @@ Species <- "Anoplopoma fimbria"
 Data_Geostat <- readRDS(file =  here('data','2022-01-14inputVast.rds')) %>%  
   filter(Survey %in% c('GOA_LATE','GOA_EARLY') )
 
-FieldConfig = matrix( c("Omega1"=1, "Epsilon1"=1, "Omega2"=1, 
+FieldConfig = matrix( c("Omega1"=1, "Epsilon1"=1, "Omega2"=1,
                         "Epsilon2"=1, "Beta1"="IID", "Beta2"="IID"), nrow=3, byrow=TRUE )
-RhoConfig = c("Beta1"=3, "Beta2"=3, "Epsilon1"=2, "Epsilon2"=2) 
+RhoConfig = c("Beta1"=3, "Beta2"=3, "Epsilon1"=2, "Epsilon2"=2)
 # Import extrapolation grid. I made this in buildExtrap.R
 input_grid <- readRDS(here('data',"user_region.rds")) %>%
   filter(Region_Name %in% c('A3','A4'))
@@ -24,23 +24,27 @@ strata.limits = data.frame('STRATA' = c('A4','A3'), 'west_border' = c(-Inf,-145)
 settings <- make_settings( Version = "VAST_v13_1_0",
                            n_x = 500,#1000, 
                            Region =  "gulf_of_alaska",
-                           purpose = "index", #index 2 is recommended BUT doesn't provide annual estimates
+                           purpose = "index2", 
                            fine_scale = TRUE, 
-                           ObsModel= c(2,0), #c(2,1), #c(1,1) #c(10,2)
+                           # ObsModel= c(2,0), #c(2,1), #c(1,1) #c(10,2)
                            strata.limits=strata.limits,
+                           treat_nonencounter_as_zero =FALSE,
                            knot_method = "grid", 
-                           bias.correct = TRUE,
+                           RhoConfig = RhoConfig,
+                           FieldConfig = FieldConfig,
+                           # bias.correct = TRUE,
+                           # bias.correct.control = list(vars_to_correct = "Index_cyl"),
                            use_anisotropy = TRUE) 
 gc()
 
 
-wkdir <-  here('runs',paste0(Sys.Date(),"-AK_500/"))
+wkdir <-  here('runs',paste0(Sys.Date(),"-AK_500nonEncounter/"))
 dir.create(wkdir)
 # Run model
 fit <- fit_model( "settings"=settings, 
                   "Lat_i"=Data_Geostat[,'Lat'], 
                   "Lon_i"=Data_Geostat[,'Lon'], 
-                  "t_i"=Data_Geostat[,'Year'], 
+                  "t_i"=Data_Geostat[,'Year'], ## maybe force this to be seq(1990,2020,1)
                   "b_i"=Data_Geostat[,'Catch_KG'], 
                   "a_i"=Data_Geostat[,'AreaSwept'], 
                   "v_i"=Data_Geostat[,'Vessel'], 
