@@ -47,6 +47,16 @@ bcsurv$se_log <- ifelse(bcsurv$Fleet == 'BC_OFFStd',0.29,0.21)
 bcsurv$REG <- 'BC'
 
 ## vast output says "kg" so div by 1000 to get mt
+## this version has the obs model set up as in RACE
+aksurv <- read.csv('C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-17-AK_500nonEncounter/index.csv') %>%
+  mutate(Estimate_metric_tons =  Estimate/1000) %>%
+  select(Year = Time,
+         Fleet = Stratum,
+         Estimate_metric_tons ,
+         se_log = Std..Error.for.ln.Estimate.) %>%
+  filter(Estimate_metric_tons != 0)
+aksurv$REG <- 'AK'
+
 aksurv <- read.csv('C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-15-AK_500/index.csv') %>%
   mutate(Estimate_metric_tons =  Estimate/1000) %>%
   select(Year = Time,
