@@ -18,23 +18,20 @@ strata.limits = data.frame('STRATA' = c('A4','A3'), 'west_border' = c(-Inf,-146)
 
 # Make settings 
 settings <- make_settings( Version = "VAST_v13_1_0",
-                           n_x = 500,#1000, 
+                           n_x = 1000, 
                            Region =  "gulf_of_alaska",
                            purpose = "index2", 
                            fine_scale = TRUE, 
-                           # ObsModel= c(2,0), #c(2,1), #c(1,1) #c(10,2)
                            strata.limits=strata.limits,
-                           treat_nonencounter_as_zero =T,
+                           treat_nonencounter_as_zero = TRUE,
                            knot_method = "grid", 
                            RhoConfig = RhoConfig,
                            FieldConfig = FieldConfig,
-                           # bias.correct = TRUE,
-                           # bias.correct.control = list(vars_to_correct = "Index_cyl"),
                            use_anisotropy = TRUE) 
 gc()
 
 
-wkdir <-  here('runs',paste0(Sys.Date(),"-AK_500-146/"))
+wkdir <-  here('runs',paste0(Sys.Date(),"-AK_1000-146-v13_1/"))
 dir.create(wkdir)
 # Run model
 fit <- fit_model( "settings"=settings, 
@@ -44,7 +41,6 @@ fit <- fit_model( "settings"=settings,
                   "b_i"=Data_Geostat[,'Catch_KG'], 
                   "a_i"=Data_Geostat[,'AreaSwept'], 
                   "v_i"=Data_Geostat[,'Vessel'], 
-                  # "input_grid"=input_grid, 
                   optimize_args=list("lower"=-Inf,"upper"=Inf),
                   "working_dir" =wkdir)
 # Plot results
