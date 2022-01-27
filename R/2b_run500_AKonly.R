@@ -11,12 +11,8 @@ Species <- "Anoplopoma fimbria"
 Data_Geostat <- readRDS(file =  here('data','2022-01-14inputVast.rds')) %>%  
   filter(Survey %in% c('GOA_LATE','GOA_EARLY') )
 
-FieldConfig = matrix( c("Omega1"=1, "Epsilon1"=1, "Omega2"=1,
-                        "Epsilon2"=1, "Beta1"="IID", "Beta2"="IID"), nrow=3, byrow=TRUE )
-RhoConfig = c("Beta1"=3, "Beta2"=3, "Epsilon1"=2, "Epsilon2"=2)
-# Import extrapolation grid. I made this in buildExtrap.R
-input_grid <- readRDS(here('data',"user_region.rds")) %>%
-  filter(Region_Name %in% c('A3','A4'))
+FieldConfig = matrix( c("IID","IID","IID","IID","IID","IID"), ncol=2, nrow=3, dimnames=list(c("Omega","Epsilon","Beta"),c("Component_1","Component_2")) )
+RhoConfig  = c("Beta1" = 0, "Beta2" = 0, "Epsilon1" = 0, "Epsilon2" = 0)
 
 strata.limits = data.frame('STRATA' = c('A4','A3'), 'west_border' = c(-Inf,-146), 'east_border' = c(-146,-130))
 
