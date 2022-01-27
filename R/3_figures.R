@@ -5,8 +5,9 @@ require(mapdata)
 require(ggsidekick)
 require(here)
 
-
-
+survfltPal <-matrix( c("#015b58" ,"#2c6184", "#1f455e", "#1f455e" ,"#984e73" ,"#a8bbcc"), 
+                     ncol = 6) 
+mgmtPal <- matrix(paste0("#",c("66827a","e7a923","9e2a2b")),nrow = 1)## 3 Demographic regions AK -> WC
 
 ## panel plot of estimated values, comparison with assessments 
 load("C:/Users/mkapur/Dropbox/UW/sab-mse/input/input_data/quants_m.rdata") 
@@ -65,7 +66,11 @@ aksurv <- read.csv('C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-15-AK_500/in
          se_log = Std..Error.for.ln.Estimate.) %>%
   filter(Estimate_metric_tons != 0)
 aksurv$REG <- 'AK'
+mgmtPalUse <- sort(rep(mgmtPal,2))
+mgmtPalUse[c(2,4,6)] <- 'grey55'
 
+
+#* index comparison with strata summation ----
 rbind( wcsurv,aksurv,  bcsurv) %>% 
   mutate(SRC = 'INTO_OM') %>%
   bind_rows(., assidx) %>%
@@ -74,33 +79,87 @@ rbind( wcsurv,aksurv,  bcsurv) %>%
   summarise(emt = sum(Estimate_metric_tons), esel = mean(se_log)) %>%
   ggplot(., aes(x = Year, 
                 y = emt, 
-                color = SRC, 
-                fill  = SRC)) +
+                alpha = SRC,
+                color = interaction(SRC ,REG ), 
+                fill  = interaction(SRC,REG  ))) +
   theme_sleek(base_size = 12) + 
-  # theme(legend.position = 'none') +
-  scale_x_continuous(limits = c(1980,2020),
-                     labels = seq(1980,2020,10))+
-  scale_color_manual(values = alpha(c('blue','grey44'),0.75))+
-  scale_fill_manual(values = alpha(c('blue','grey44'),0.3))+
-  # geom_ribbon(aes(ymin = emt-emt*esel,
-  #                 ymax =  emt+emt*esel,
-  #                 width = 0), col = NA)+
-  geom_errorbar(aes(ymin = emt-emt*esel,
-                    ymax =  emt+emt*esel,
-                    width = 0))+
+  theme(legend.position = 'none') +
+  # scale_x_continuous(limits = c(1980,2020),
+  #                    labels = seq(1980,2020,10))+
+  scale_alpha_manual(values = c(0.65,0.35))+
+  scale_color_manual(values = mgmtPalUse)+
+  scale_fill_manual(values = mgmtPalUse)+
+  
+  geom_ribbon(aes(ymin = emt-emt*esel,
+                  ymax =  emt+emt*esel,
+                  width = 0), col = NA)+
+  # geom_errorbar(aes(ymin = emt-emt*esel,
+  #                   ymax =  emt+emt*esel,
+  #                   width = 0))+
   geom_point(size = 1.5) +
+  geom_line(lwd = 0.9)+
   labs(x = 'Year', 
-       subtitle='BC uses regional inputs as-is.
-       AK & WC values have been summed across strata for plotting purposes.',
-       y = 'Survey Observations (mt)') +
+       # subtitle='BC uses regional inputs as-is.
+       # AK & WC values have been summed across strata for plotting purposes.',
+       y = 'Relative Survey Abundance (mt)') +
   facet_wrap(~REG, scales = 'free_y')
 
+ggsave(plot =  last_plot(),
+       file = here('figures',paste0(Sys.Date(),'-idx_comparison1.png')),
+       width = 10, height = 6, units = 'in', dpi = 440)
 
+
+#* index comparison without strata summation ----
+mgmtPalUse <- c(   mgmtPal[2],
+                   "#936A10",
+                   mgmtPal[1],
+                   "#5A726A",
+                   mgmtPal[3],
+                   "#D45E60",
+                   'grey44')
+rbind( wcsurv,aksurv,  bcsurv) %>% 
+  mutate(SRC = 'INTO_OM') %>%
+  bind_rows(., assidx) %>%
+  filter(Estimate_metric_tons > 0) %>%
+  filter(!(is.na(Fleet) & REG == 'BC')) %>%
+  # group_by(Year, REG, SRC )%>%
+  # summarise(emt = sum(Estimate_metric_tons), esel = mean(se_log)) %>%
+  mutate(emt =Estimate_metric_tons, esel = se_log ) %>%
+  ggplot(., aes(x = Year, 
+                y = emt, 
+                group = Fleet,
+                alpha = SRC,
+                color = Fleet, 
+                fill  = Fleet)) +
+  theme_sleek(base_size = 12) + 
+  theme(legend.position = 'none') +
+  # scale_x_continuous(limits = c(1980,2020),
+  #                    labels = seq(1980,2020,10))+
+  scale_alpha_manual(values = c(0.65,0.35))+
+  scale_color_manual(values = mgmtPalUse)+
+  scale_fill_manual(values = mgmtPalUse)+
+  
+  geom_ribbon(aes(ymin = emt-emt*esel,
+                  ymax =  emt+emt*esel,
+                  width = 0), col = NA)+
+  # geom_errorbar(aes(ymin = emt-emt*esel,
+  #                   ymax =  emt+emt*esel,
+  #                   width = 0))+
+  geom_point(size = 1.5) +
+  geom_line(lwd = 0.9)+
+  labs(x = 'Year', 
+       # subtitle='BC uses regional inputs as-is.
+       # AK & WC values have been summed across strata for plotting purposes.',
+       y = 'Relative Survey Abundance (mt)') +
+  facet_wrap(~REG, scales = 'free_y')
+
+ggsave(plot =  last_plot(),
+       file = here('figures',paste0(Sys.Date(),'-idx_comparison2.png')),
+       width = 10, height = 6, units = 'in', dpi = 440)
 
 survfltPal0 <-  matrix(PNWColors::pnw_palette(name = 'Bay',n=5), ncol = 5) ## for VAST outputs
 survfltPal <- paste0("#",c("00496f","086788","0f85a0","7eae73","edd746",
                            "edb123","ed8b00","e56612","E1541B","dd4124"))
-# source("C:/Users/maia kapur/Dropbox/UW/sab-mse/input/input_data/colorPals.R") ## OM/MSE palettes
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 # load("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2020-01-23_nx=500_Triennial_WCGBTS_BCs_BCo_AK_DOM_LL_GOA_baseQ=AK_DOM_LL1980_2018/Data_Geostat.Rdata")
 ## reboot of jim code showing survey regions and sample sizes [he used base] ----
