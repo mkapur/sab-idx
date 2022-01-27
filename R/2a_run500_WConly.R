@@ -18,7 +18,7 @@ RhoConfig = c("Beta1"=0, "Beta2"=0, "Epsilon1"=0, "Epsilon2"=0)
 
 strata.limits = data.frame('STRATA' = c('C1','C2'), 'north_border' = c(36,50), 'south_border' = c(25,36))
 # Make settings 
-settings <- make_settings( Version = "VAST_v12_0_0",
+settings <- make_settings( Version = "VAST_v13_1_0",
                           n_x = 500,#1000, 
                           Region =  "california_current",
                           purpose = "index2", 
