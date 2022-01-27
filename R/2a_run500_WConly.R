@@ -12,6 +12,7 @@ Data_Geostat <- readRDS(file =  here('data','2022-01-14inputVast.rds')) %>%
   filter(Survey %in% c('NWFSC_Combo',"Triennial_late" , "Triennial_early"))
 
 ## as in VASTWestCoast
+# see https://github.com/nwfsc-assess/VASTWestCoast/blob/16194834f6258277a83969b66626ebf9664f756c/inst/examples/Triennial_annual_2017.R
 FieldConfig = matrix( c("Omega1"=1, "Epsilon1"=1, "Omega2"=1, 
                         "Epsilon2"=1, "Beta1"="IID", "Beta2"="IID"), nrow=3, byrow=TRUE )
 RhoConfig = c("Beta1"=0, "Beta2"=0, "Epsilon1"=0, "Epsilon2"=0) 
