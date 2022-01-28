@@ -49,7 +49,8 @@ bcsurv$REG <- 'BC'
 
 ## vast output says "kg" so div by 1000 to get mt
 ## this version has the obs model set up as in RACE
-aksurv <- read.csv('C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-17-AK_500nonEncounter/index.csv') %>%
+aksurv <- read.csv('C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-27-AK_1000-146-v13_1/index.csv') %>%
+# aksurv <- read.csv('C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-17-AK_500nonEncounter/index.csv') %>%
   mutate(Estimate_metric_tons =  Estimate/1000) %>%
   select(Year = Time,
          Fleet = Stratum,
@@ -121,9 +122,7 @@ rbind( wcsurv,aksurv,  bcsurv) %>%
   mutate(SRC = 'INTO_OM') %>%
   bind_rows(., assidx) %>%
   filter(Estimate_metric_tons > 0) %>%
-  filter(!(is.na(Fleet) & REG == 'BC')) %>%
-  # group_by(Year, REG, SRC )%>%
-  # summarise(emt = sum(Estimate_metric_tons), esel = mean(se_log)) %>%
+  filter(!(is.na(Fleet) & REG == 'BC') & Year < 2020) %>%
   mutate(emt =Estimate_metric_tons, esel = se_log ) %>%
   ggplot(., aes(x = Year, 
                 y = emt, 
