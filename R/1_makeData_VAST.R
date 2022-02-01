@@ -61,7 +61,7 @@ wc_input <- rbind(wc.combo, wc.tri) %>%
 ## DH indicated to use <700m and drop 1984, 1987 and split at 1993
 ak.goa <- read.csv( here('data',"race_cpue_by_haul-011322.csv"), header=TRUE,skip = 7) %>% 
   # filter( Gear.Depth <= 500 & !(Year %in% c(1984,1987)) ) %>%
-  filter( Gear.Depth <= 700  ) %>%
+  filter( Gear.Depth <= 500  ) %>%
   mutate(Vessel = as.factor(Vessel.Number),
          Catch_KG = ifelse(is.na(Weight.CPUE..kg.km2.),0,Weight.CPUE..kg.km2.),
          Lon =    ifelse(  Starting.Longitude..dd. > 0,   Starting.Longitude..dd.*-1, Starting.Longitude..dd.),
