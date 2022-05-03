@@ -4,33 +4,95 @@ require(reshape2)
 require(mapdata)
 require(ggsidekick)
 require(here)
+sf::sf_use_s2(FALSE)
 
 survfltPal <-matrix( c("#015b58" ,"#2c6184", "#1f455e", "#1f455e" ,"#984e73" ,"#a8bbcc"), 
                      ncol = 6) 
 mgmtPal <- matrix(paste0("#",c("66827a","e7a923","9e2a2b")),nrow = 1)## 3 Demographic regions AK -> WC
 
-## panel plot of estimated values, comparison with assessments 
+
+## table with parameter estimates, formatted ----
+load("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-15-AK_500-145-v13_1-500m-obs20/parameter_estimates.RData")
+TMB::summary.sdreport( parameter_estimates$SD,"fixed") %>%
+  data.frame() %>%
+  mutate(desc = NA, survey = 'AK GOA Trawl Survey') %>%
+  select(desc, Estimate  ,Std..Error, survey ) %>%
+  write.csv(here('tables',paste0(Sys.Date(),"-Table2-AK.csv")))
+load("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-15-WC_500/parameter_estimates.RData")
+TMB::summary.sdreport( parameter_estimates$SD,"fixed") %>%
+  data.frame() %>%
+  mutate(desc = NA, survey = 'California Current Surveys') %>%
+  select(desc, Estimate  ,Std..Error, survey ) %>%
+  write.csv(here('tables',paste0(Sys.Date(),"-Table2-CC.csv")))
+## Estimated Values vs assessment ----
 load("C:/Users/mkapur/Dropbox/UW/sab-mse/input/input_data/quants_m.rdata") 
-assidx <- quantsM %>% filter(var == 'Index') %>%
+assidx <- quantsM %>% 
+  filter(var == 'Index' )%>%
+  filter(!(fleet == 'Triennial' & Yr == 2004)) %>% ## drop so doesn't sum
   mutate(Estimate_metric_tons = Value) %>% ## in kt
   select(Year = Yr,Estimate_metric_tons, se_log = CV, REG) %>%
-  mutate(SRC = 'Regional_Assessment')
+  mutate(SRC = 'Regional_Assessment') 
+
+## custom prediction plots ----
+dyn.load(dynlib(here("VAST_v13_1_0"))) ## needs to be loaded for plot_maps to work
+#* AK
+akfit <- readRDS("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-15-AK_500-145-v13_1-500m-obs20/2022-01-15-AK_500fit.RDS")
+projargs_plot = "+proj=utm +datum=WGS84 +units=km +zone=3"
+#projargs_plot = "+proj=moll +lon_0=-150 +datum=WGS84 +units=km"
+#projargs_plot = "+proj=natearth +lon_0=-180 +datum=WGS84 +units=km"
+mapl <- make_map_info(  Region =  "gulf_of_alaska",
+                spatial_list = akfit$spatial_list,
+                Extrapolation_List = akfit$extrapolation_list)
+plot_maps(
+  plot_set = 3,
+  akfit,
+  year_labels = akfit$year_labels,
+  PlotDF = mapl$PlotDF,
+  projargs = "+proj=utm +datum=WGS84 +units=km +zone=3",
+  working_dir = here("runs","2022-01-15-AK_500-145-v13_1-500m-obs20/"),
+  quiet = FALSE,
+  years_to_plot = akfit$years_to_plot,
+  country = c("united states of america", "canada", "mexico", "russia", 'japan')
+)
+
+#* WC
+wcfit <- readRDS("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-02-14-WC_500-nonEncounter-redo/2022-02-14-WC_500-nonEncounter-redofit.RDS")
+projargs_plot = "+proj=utm +datum=WGS84 +units=km +zone=3"
+#projargs_plot = "+proj=moll +lon_0=-150 +datum=WGS84 +units=km"
+#projargs_plot = "+proj=natearth +lon_0=-180 +datum=WGS84 +units=km"
+mapl <- make_map_info(  Region =  "California_Current",
+                        spatial_list = wcfit$spatial_list,
+                        Extrapolation_List = wcfit$extrapolation_list)
+plot_maps(
+  plot_set = 3,
+  akfit,
+  year_labels = akfit$year_labels,
+  PlotDF = mapl$PlotDF,
+  projargs = "+proj=utm +datum=WGS84 +units=km +zone=3",
+  working_dir = here("runs","2022-02-14-WC_500-nonEncounter-redo/"),
+  quiet = FALSE,
+  years_to_plot = akfit$years_to_plot,
+  country = c("united states of america", "canada", "mexico", "russia", 'japan')
+)
 assidx$Year <- as.numeric(assidx$Year)
 ## the table i read from to get AK values was in KT, multiply by 1000 to get mt
 assidx$Estimate_metric_tons[assidx$REG == 'AK'] <- assidx$Estimate_metric_tons[assidx$REG == 'AK']*1000
+## the table i wrote from to get BC values was in KT, multiply by 1000 to get mt
+assidx$Estimate_metric_tons[assidx$REG == 'BC'] <- assidx$Estimate_metric_tons[assidx$REG == 'BC']*1000
 assidx$se_log[assidx$REG == 'AK'] <- 0.15 ## i have no clue from the plot
-
+assidx$REG[assidx$REG == 'WC'] <- 'CC'
 
 ## vast output says "kg" so div by 1000 to get mt
-wcsurv <- read.csv('C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-15-WC_500/index.csv') %>%
+wcsurv <- read.csv(here('runs','2022-01-15-WC_500/index.csv')) %>%
   mutate(Estimate_metric_tons =  Estimate/1000) %>%
   select(Year = Time,
          Fleet = Stratum,
          Estimate_metric_tons ,
          se_log = Std..Error.for.ln.Estimate.) %>%
   filter(Estimate_metric_tons != 0)
-wcsurv$Fleet <- ifelse(wcsurv$Fleet == 'Stratum_1','WC_VAST_C1','WC_VAST_C2')
-wcsurv$REG <- 'WC'
+wcsurv$Fleet <- ifelse(wcsurv$Fleet == 'Stratum_1','CC_VAST_C1','CC_VAST_C2')
+wcsurv$REG <- 'CC'
+
 
 fit_prelim2021_rec18 <- readRDS("C:/Users/mkapur/Dropbox/UW/sab-mse/input/downloads/fit_prelim2021_rec18/fit_prelim2021_rec18.rds")
 bcreport <- fit_prelim2021_rec18$repOpt 
@@ -41,16 +103,15 @@ bcsurv1<-data.frame(t(bcsurv0[1,c(1,4,5),])) %>%
 names(bcsurv1)[1:3] <- c('Trap','BC_OFFStd','BC_StRs') 
 bcsurv <- bcsurv1 %>%
   melt(id = 'Year') %>%
-  mutate(se_log = NA) %>%
-  select(Year, Fleet = variable, Estimate_metric_tons=value, se_log) %>%
+  mutate(se_log = NA,Estimate_metric_tons = value*1000) %>%
+  select(Year, Fleet = variable, Estimate_metric_tons, se_log) %>%
   filter(Fleet != 'Trap')
 bcsurv$se_log <- ifelse(bcsurv$Fleet == 'BC_OFFStd',0.29,0.21)
 bcsurv$REG <- 'BC'
 
 ## vast output says "kg" so div by 1000 to get mt
 ## this version has the obs model set up as in RACE
-aksurv <- read.csv('C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-27-AK_1000-146-v13_1/index.csv') %>%
-# aksurv <- read.csv('C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-17-AK_500nonEncounter/index.csv') %>%
+aksurv <- read.csv(here('runs','2022-01-15-AK_500-145-v13_1-500m-obs20/index.csv')) %>%
   mutate(Estimate_metric_tons =  Estimate/1000) %>%
   select(Year = Time,
          Fleet = Stratum,
@@ -58,20 +119,14 @@ aksurv <- read.csv('C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-27-AK_1000-1
          se_log = Std..Error.for.ln.Estimate.) %>%
   filter(Estimate_metric_tons != 0)
 aksurv$REG <- 'AK'
+aksurv$Fleet <- ifelse(aksurv$Fleet == 'Stratum_1','AK_VAST_A4','AK_VAST_A3')
 
-aksurv <- read.csv('C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2022-01-15-AK_500/index.csv') %>%
-  mutate(Estimate_metric_tons =  Estimate/1000) %>%
-  select(Year = Time,
-         Fleet = Stratum,
-         Estimate_metric_tons ,
-         se_log = Std..Error.for.ln.Estimate.) %>%
-  filter(Estimate_metric_tons != 0)
-aksurv$REG <- 'AK'
-mgmtPalUse <- sort(rep(mgmtPal,2))
-mgmtPalUse[c(2,4,6)] <- 'grey55'
+
 
 
 #* index comparison with strata summation ----
+mgmtPalUse <- rep(mgmtPal[c(1,3,2)],2)
+mgmtPalUse[c(2,4,6)] <- 'grey55'
 rbind( wcsurv,aksurv,  bcsurv) %>% 
   mutate(SRC = 'INTO_OM') %>%
   bind_rows(., assidx) %>%
@@ -109,14 +164,49 @@ ggsave(plot =  last_plot(),
        file = here('figures',paste0(Sys.Date(),'-idx_comparison1.png')),
        width = 10, height = 6, units = 'in', dpi = 440)
 
+#* index comparison with strata summation v2 ----
+## no BC and labeled fleets
+mgmtPalUse <- c("#66827a",'grey55', "#9e2a2b",'grey55')
+
+rbind( wcsurv,aksurv) %>% 
+  mutate(SRC = 'INTO_OM') %>%
+  bind_rows(., assidx %>% filter(REG != 'BC') ) %>%
+  filter(Estimate_metric_tons > 0) %>%
+  group_by(Year, REG, SRC )%>%
+  summarise(emt = sum(Estimate_metric_tons), esel = mean(se_log)) %>%
+  ggplot(., aes(x = Year, 
+                y = emt, 
+                alpha = SRC,
+                color = interaction(SRC ,REG ), 
+                fill  = interaction(SRC,REG  ))) +
+  theme_sleek(base_size = 12) + 
+  theme(legend.position = 'none') +
+  scale_alpha_manual(values = c(0.65,0.35), guide = 'none')+ 
+  scale_color_manual(values = mgmtPalUse)+
+  scale_fill_manual(values = mgmtPalUse)+
+
+  geom_ribbon(aes(ymin = emt-emt*esel,
+                  ymax =  emt+emt*esel,
+                  width = 0), col = NA)+
+  geom_point(size = 1.5) +
+  geom_line(lwd = 0.9)+
+  labs(x = 'Year', 
+       y = 'Relative Survey Abundance (mt)') +
+  facet_wrap(~REG,
+             # scales = 'free_y'
+             )
+
+ggsave(plot =  last_plot(),
+       file = here('figures',paste0(Sys.Date(),'-idx_comparison1_v2.png')),
+       width = 10, height = 6, units = 'in', dpi = 440)
 
 #* index comparison without strata summation ----
 mgmtPalUse <- c(   mgmtPal[2],
                    "#936A10",
+                   mgmtPal[3],
+                   "#D45E60", 
                    mgmtPal[1],
                    "#5A726A",
-                   mgmtPal[3],
-                   "#D45E60",
                    'grey44')
 rbind( wcsurv,aksurv,  bcsurv) %>% 
   mutate(SRC = 'INTO_OM') %>%
@@ -141,19 +231,50 @@ rbind( wcsurv,aksurv,  bcsurv) %>%
   geom_ribbon(aes(ymin = emt-emt*esel,
                   ymax =  emt+emt*esel,
                   width = 0), col = NA)+
-  # geom_errorbar(aes(ymin = emt-emt*esel,
-  #                   ymax =  emt+emt*esel,
-  #                   width = 0))+
   geom_point(size = 1.5) +
   geom_line(lwd = 0.9)+
   labs(x = 'Year', 
-       # subtitle='BC uses regional inputs as-is.
-       # AK & WC values have been summed across strata for plotting purposes.',
        y = 'Relative Survey Abundance (mt)') +
   facet_wrap(~REG, scales = 'free_y')
 
 ggsave(plot =  last_plot(),
        file = here('figures',paste0(Sys.Date(),'-idx_comparison2.png')),
+       width = 10, height = 6, units = 'in', dpi = 440)
+#* index comparison without strata summation V2 ----
+
+mgmtPalUse <- c( "#66827a", "#5691B6", "#9e2a2b" ,"#D45E60" , "grey44" )
+
+rbind( wcsurv,aksurv) %>% 
+  mutate(SRC = 'INTO_OM') %>%
+  bind_rows(., assidx) %>%
+  filter(Estimate_metric_tons > 0) %>%
+  filter(!(is.na(Fleet) & REG == 'BC') & Year < 2020) %>%
+  mutate(emt =Estimate_metric_tons, esel = se_log ) %>%
+  ggplot(., aes(x = Year, 
+                y = emt, 
+                group = Fleet,
+                alpha = SRC,
+                color = Fleet, 
+                fill  = Fleet)) +
+  theme_sleek(base_size = 12) + 
+  theme(legend.position = c(0.85,0.8)) +
+  scale_alpha_manual(values = c(0.65,0.35), guide = 'none')+
+  scale_color_manual(values = mgmtPalUse)+
+  scale_fill_manual(values = mgmtPalUse)+
+  geom_ribbon(aes(ymin = emt-emt*esel,
+                  ymax =  emt+emt*esel,
+                  width = 0), col = NA)+
+  geom_point(size = 1.5) +
+  geom_line(lwd = 0.9)+
+  labs(x = 'Year', 
+       y = 'Relative Survey Abundance (mt)') +
+  facet_wrap(~REG, 
+             # scales = 'free_y'
+             )
+
+
+ggsave(plot =  last_plot(),
+       file = here('figures',paste0(Sys.Date(),'-idx_comparison2_v2.png')),
        width = 10, height = 6, units = 'in', dpi = 440)
 
 survfltPal0 <-  matrix(PNWColors::pnw_palette(name = 'Bay',n=5), ncol = 5) ## for VAST outputs
@@ -161,14 +282,46 @@ survfltPal <- paste0("#",c("00496f","086788","0f85a0","7eae73","edd746",
                            "edb123","ed8b00","e56612","E1541B","dd4124"))
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 # load("C:/Users/mkapur/Dropbox/UW/sab-idx/runs/2020-01-23_nx=500_Triennial_WCGBTS_BCs_BCo_AK_DOM_LL_GOA_baseQ=AK_DOM_LL1980_2018/Data_Geostat.Rdata")
+
+
 ## reboot of jim code showing survey regions and sample sizes [he used base] ----
 usa <- map_data("world")
+## Updated F1 map of strata using Luke's approach ----
+load( "C:/Users/mkapur/Dropbox/UW/sab-mse/input/downloads/eez_nepac_regions.rda") ## regions
+load("C:/Users/mkapur/Dropbox/UW/sab-mse/input/downloads/sub_area_clips_50N.Rdata") ## clips (list)
+regions <- eez_nepac_regions
+st_crs(regions) <- st_crs(regions)
+regions$Region_Name <- c('Alaska (AK)',   'British Columbia (BC)',  "California Current (CC)")
+Data_Geostat <- readRDS(file =  here('data','2022-02-01inputVast.rds'))
+Data_Geostat$Lon <-  with(Data_Geostat, Lon + 360)
+
 mgmtLims <- data.frame(ymax = c(65,65, 49),
                        ymin = c(49,49, 30), 
                        xmax = c(-180,-134, -115), 
                        xmin = c(-134,-115, -132))
 
 plist<-list()
+ggplot(data = regions) + 
+  theme_classic(base_size = 14) +
+  coord_sf(xlim = c(165, 245), ylim = c(26, 65)) +
+  labs(x ="",y="") + 
+  # theme(legend.position = 'none')+
+  
+  ## mgmt fill
+  geom_sf(data = clips[[1]], fill = mgmtPal[1], alpha = 0.75, color = NA)+
+  geom_sf(data = clips[[2]], fill = mgmtPal[1], alpha = 0.75, color = NA)+
+  geom_sf(data = clips[[5]], fill = mgmtPal[3], alpha = 0.75, color = NA)+
+  geom_sf(data = clips[[6]], fill = mgmtPal[3], alpha = 0.75, color = NA) +
+  
+
+  ## add data points
+  geom_point(data = Data_Geostat, alpha = 0.01,
+             aes(x = Lon,  y = Lat, color = factor(Survey))) +
+  geom_sf_label(data = clips[[1]],aes(label = 'Alaska (AK)'),size = 4, fill = 'white', color = mgmtPal[1])+
+  geom_sf_label(data = clips[[5]],aes(label = 'California Current (CC)'),size = 4, fill = 'white', color = mgmtPal[3])
+  scale_color_manual(values = survfltPal)
+
+
 plist[[1]] <- ggplot() +
   geom_polygon(data = usa, aes(x = long, y = lat, group = group), fill = 'grey55') +
   coord_quickmap(clip = 'off') +
