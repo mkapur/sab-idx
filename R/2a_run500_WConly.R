@@ -36,7 +36,7 @@ settings <- make_settings( Version = "VAST_v13_1_0",
 gc()
 
 
-wkdir <-  here('runs',paste0(Sys.Date(),"-WC_500-nonEncounter-v12/"))
+wkdir <-  here('runs',paste0(Sys.Date(),"-WC_500-nonEncounter-redo/"))
 dir.create(wkdir)
 # Run model
 fit <- fit_model( "settings"=settings, 
@@ -52,7 +52,7 @@ fit <- fit_model( "settings"=settings,
 
 
 # Plot results
-plot( fit )
+# plot( fit )
 
 # save the VAST model
 saveRDS(fit,file = paste0(wkdir,"fit.RDS"))
