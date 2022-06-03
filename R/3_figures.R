@@ -242,12 +242,13 @@ ggsave(plot =  last_plot(),
        width = 10, height = 6, units = 'in', dpi = 440)
 #* index comparison without strata summation V2 ----
 
-mgmtPalUse <- c( "#015b58", "#2c6184", "#984e73" ,"#a8bbcc" , NA )
-# "#" "#" "#1f455e" "#ba7999" "#" "#"
-fltlabs = c('Subarea A3 VAST (AK)',
-            'Subarea A4 VAST (AK)',
-            'Subarea C1 VAST (AK)',
-            'Subarea A4 VAST (AK)',)
+mgmtPalUse <- c( "#015b58", "#2c6184", "#984e73" ,"#a8bbcc" , 'white' )
+
+fltlabs = c('Subarea A4 VAST',
+            'Subarea A3 VAST',
+            'Subarea C2 VAST',
+            'Subarea C1 VAST',
+            '')
 tt <- rbind( wcsurv,aksurv) %>% 
   mutate(SRC = 'INTO_OM') %>%
   bind_rows(., assidx) %>%
@@ -255,8 +256,11 @@ tt <- rbind( wcsurv,aksurv) %>%
   filter(!(is.na(Fleet) & REG == 'BC') & Year < 2020) %>%
   mutate(emt =Estimate_metric_tons, esel = se_log ) 
 tt$Fleet <- factor(tt$Fleet, levels = c('AK_VAST_A4','AK_VAST_A3','CC_VAST_C2','CC_VAST_C1'))  
+
 dose.labs <-c("Alaska", "US West Coast")
 names(dose.labs) <-  c("AK", "CC") 
+
+
 ggplot(tt, aes(x = Year, 
                 y = emt, 
                 group = Fleet,
@@ -266,8 +270,8 @@ ggplot(tt, aes(x = Year,
   theme_sleek(base_size = 12) + 
   theme(legend.position = c(0.85,0.8)) +
   scale_alpha_manual(values = c(0.65,0.35), guide = 'none')+
-  scale_color_manual(values = mgmtPalUse)+
-  scale_fill_manual(values = mgmtPalUse)+
+  scale_color_manual(values = mgmtPalUse, labels = fltlabs)+
+  scale_fill_manual(values = mgmtPalUse, labels = fltlabs)+
   geom_ribbon(aes(ymin = emt-emt*esel,
                   ymax =  emt+emt*esel,
                   width = 0), col = NA)+
