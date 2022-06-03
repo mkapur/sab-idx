@@ -3,7 +3,7 @@ require(ggplot2)
 require(reshape2)
 require(mapdata)
 require(ggsidekick)
-require(here)
+require(here);require(TMB)
 sf::sf_use_s2(FALSE)
 
 survfltPal <-matrix( c("#015b58" ,"#2c6184", "#1f455e", "#1f455e" ,"#984e73" ,"#a8bbcc"), 
@@ -242,15 +242,22 @@ ggsave(plot =  last_plot(),
        width = 10, height = 6, units = 'in', dpi = 440)
 #* index comparison without strata summation V2 ----
 
-mgmtPalUse <- c( "#66827a", "#5691B6", "#9e2a2b" ,"#D45E60" , "grey44" )
-
-rbind( wcsurv,aksurv) %>% 
+mgmtPalUse <- c( "#015b58", "#2c6184", "#984e73" ,"#a8bbcc" , NA )
+# "#" "#" "#1f455e" "#ba7999" "#" "#"
+fltlabs = c('Subarea A3 VAST (AK)',
+            'Subarea A4 VAST (AK)',
+            'Subarea C1 VAST (AK)',
+            'Subarea A4 VAST (AK)',)
+tt <- rbind( wcsurv,aksurv) %>% 
   mutate(SRC = 'INTO_OM') %>%
   bind_rows(., assidx) %>%
   filter(Estimate_metric_tons > 0) %>%
   filter(!(is.na(Fleet) & REG == 'BC') & Year < 2020) %>%
-  mutate(emt =Estimate_metric_tons, esel = se_log ) %>%
-  ggplot(., aes(x = Year, 
+  mutate(emt =Estimate_metric_tons, esel = se_log ) 
+tt$Fleet <- factor(tt$Fleet, levels = c('AK_VAST_A4','AK_VAST_A3','CC_VAST_C2','CC_VAST_C1'))  
+dose.labs <-c("Alaska", "US West Coast")
+names(dose.labs) <-  c("AK", "CC") 
+ggplot(tt, aes(x = Year, 
                 y = emt, 
                 group = Fleet,
                 alpha = SRC,
@@ -269,7 +276,7 @@ rbind( wcsurv,aksurv) %>%
   labs(x = 'Year', 
        y = 'Relative Survey Abundance (mt)') +
   facet_wrap(~REG, 
-             # scales = 'free_y'
+             labeller = labeller(REG = dose.labs)
              )
 
 
