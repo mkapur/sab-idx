@@ -15,7 +15,15 @@ Data_Geostat <- readRDS(file =  here('data','2022-02-01inputVast.rds')) %>%
 
 FieldConfig = matrix( c("IID","IID","IID","IID","IID","IID"), ncol=2, nrow=3, 
                       dimnames=list(c("Omega","Epsilon","Beta"),c("Component_1","Component_2")) )
-RhoConfig  = c("Beta1" = 0, "Beta2" = 0, "Epsilon1" = 0, "Epsilon2" = 0)
+
+## FROM THORSON:
+# The simplest way to interpolate among years is use `RhoConfig[c("Beta1","Beta2")] = 2 or 3 or 4` and
+# `treat_nonencounter_as_zero = FALSE` ...
+# this then ensures that intercepts follow something resembling a Brownian bridge (mean reverting random walk) 
+# to nearest years with data.  If doing this, it also typically makes sense to specify
+# `RhoConfig[c("Epsilon1","Epsilon2)] = 2 or 3 or 4` as well, so that spatio-temporal hotspots are interpolated.
+# RhoConfig  = c("Beta1" = 0, "Beta2" = 0, "Epsilon1" = 0, "Epsilon2" = 0)
+RhoConfig  = c("Beta1" = 2, "Beta2" = 2, "Epsilon1" = 2, "Epsilon2" = 2)
 
 strata.limits = data.frame('STRATA' = c('A4','A3'), 'west_border' = c(-Inf,-145), 'east_border' = c(-145,-130))
 

@@ -39,25 +39,27 @@ wc_input <- rbind(wc.combo, wc.tri) %>%
 ## for the LL data, this is at the haul level thus there are dupes across stations; previously Kari had sent me
 ## a custom spreadsheet, but I will have to work with this as-is.
 
-# ak.ll0 <- bind_rows(read.csv(here('data','catch_summary_view_with_nulls1979-1999.csv'), header=TRUE,skip = 6),
-#                             read.csv(here('data','catch_summary_view_with_nulls2000-2020.csv'), header=TRUE,skip = 6))
-# ak.ll <- ak.ll0 %>% 
-#   filter(Year > 1989) %>%
-#   mutate(Catch2 = ifelse(is.na(Catch),0,Catch),
-#          Start.Longitude..DD. =    ifelse(  Start.Longitude..DD. > 0,   Start.Longitude..DD.*-1, Start.Longitude..DD.),
-#          Vessel = ifelse(Year < 1994, "Ocean Prowler", 
-#                          ifelse(Year %% 2 == 0, 
-#                                 "Alaskan Leader",  "Ocean Prowler"  ) )) %>% 
-#   group_by(Year, Haul,Vessel, Station.Number) %>%
-#   summarise( Catch_KG=mean(Catch2),
-#              Lon =mean(Start.Longitude..DD.),
-#              Lat = mean(Start.Latitude..DD.)) %>%
-#   mutate(Survey = 'AK_DOM_LL', AreaSwept = 0.01,
-#         ) %>%
-#   select(Survey, Catch_KG, Year, Vessel, AreaSwept,
-#          Lat , Lon , Pass = Haul)
+ak.ll0 <- bind_rows(read.csv(here('data','catch_summary_view_with_nulls1979-1999.csv'), header=TRUE,skip = 6),
+                            read.csv(here('data','catch_summary_view_with_nulls2000-2020.csv'), header=TRUE,skip = 6))
+ak.ll <- ak.ll0 %>%
+  filter(Year > 1989) %>%
+  mutate(Catch2 = ifelse(is.na(Catch),0,Catch),
+         Start.Longitude..DD. =  
+           ifelse(  Start.Longitude..DD. > 0,   Start.Longitude..DD.*-1, Start.Longitude..DD.),
+         Vessel = ifelse(Year < 1994, "Ocean Prowler",
+                         ifelse(Year %% 2 == 0,
+                                "Alaskan Leader",  "Ocean Prowler"  ) )) %>%
+  group_by(Year, Haul,Vessel, Station.Number) %>%
+  summarise( Catch_KG=mean(Catch2), ## average catch by station to deal with dupes
+             Lon =mean(Start.Longitude..DD.),
+             Lat = mean(Start.Latitude..DD.)) %>%
+  mutate(Survey = 'AK_DOM_LL', AreaSwept = 0.01,
+        ) %>%
+  select(Survey, Catch_KG, Year, Vessel, AreaSwept,
+         Lat , Lon , Pass = Haul)  %>%
+  data.frame()
 
-
+saveRDS(ak.ll, file = here('data',paste0(Sys.Date(),'ak_LL.rds')))
 ## DH indicated to use <700m and drop 1984, 1987 and split at 1993
 ak.goa <- read.csv( here('data',"race_cpue_by_haul-011322.csv"), header=TRUE,skip = 7) %>% 
   # filter( Gear.Depth <= 500 & !(Year %in% c(1984,1987)) ) %>%
