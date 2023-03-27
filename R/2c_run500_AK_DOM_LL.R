@@ -13,10 +13,10 @@ packageVersion('FishStatsUtils')
 # Data_Geostat$Survey[Data_Geostat$Year < 1990] <- "Dropped_Years"
 Data_Geostat <- readRDS("C:/Users/mkapur/Dropbox/UW/sab-idx/data/2023-03-24ak_LL.rds")
 
-FieldConfig = matrix( c("IID","IID","IID","IID","IID","IID"), ncol=2, nrow=3, 
+FieldConfig = matrix( c("IID","IID","IID","IID","IID","IID"), ncol=2, nrow=3,
                       dimnames=list(c("Omega","Epsilon","Beta"),
                                     c("Component_1","Component_2")) )
-FieldConfig["Epsilon1"]=0
+FieldConfig[2,1]=0 ## got a gradient warning
 
 ## FROM THORSON:
 # The simplest way to interpolate among years is use `RhoConfig[c("Beta1","Beta2")] = 2 or 3 or 4` and
@@ -31,43 +31,24 @@ strata.limits = data.frame('STRATA' = c('A4','A3'), 'west_border' = c(-Inf,-145)
                            'east_border' = c(-145,-130))
 
 # Make settings 
-user_region <- readRDS(here('data','user_region.rds') ) %>% filter(Region_Name %in% c('A3','A4'))
-# settings <- make_settings( Version = "VAST_v13_1_0",
-#                            n_x = 500, 
-#                            Region =  "gulf_of_alaska",
-#                            purpose = "index2", 
-#                            fine_scale = TRUE, 
-#                            strata.limits=strata.limits,
-#                            treat_nonencounter_as_zero = TRUE,
-#                            knot_method = "grid", 
-#                            ObsModel= c(2,1), #c(1,1)
-#                            RhoConfig = RhoConfig,
-#                            FieldConfig = FieldConfig,
-#                            use_anisotropy = TRUE) 
+# user_region <- readRDS(here('data','user_region.rds') ) %>% filter(Region_Name %in% c('A3','A4'))
 settings <- spatial_args_default <- make_settings( Version = "VAST_v13_1_0",
                            n_x = 500,
-                           Region =  "User",
-                           purpose = "index2",
+                           Region =  "gulf_of_alaska",
+                           purpose = "index2", 
                            fine_scale = TRUE,
                            strata.limits=strata.limits,
                            treat_nonencounter_as_zero = TRUE,
                            knot_method = "grid",
-                           ObsModel= c(2,3), ## to deal with 100% catch rates
-                           # ObsModel= c(2,1), #c(1,1)
+                           ObsModel= c(2,4), ## to deal with 100% catch rates 
                            RhoConfig = RhoConfig,
                            FieldConfig = FieldConfig,
                            use_anisotropy = TRUE)
 
 gc()
-
-
-# wkdir <-  here('runs',paste0(Sys.Date(),"-AK_500-145-v13-1-DOMLL/"))
-wkdir = here('runs','2023-03-24-ak_500_145_v13_1_domll')
+wkdir <-  here('runs',paste0(Sys.Date(),"-AK_500-145-v13-1-DOMLL-OBS2-4_Region=GOA/"))
 dir.create(wkdir)
 # Run model
-# Data_Geostat[,'Catch_KG']$Catch_KG <- as.numeric(Data_Geostat[,'Catch_KG']$Catch_KG)
-
-
 fit <- fit_model( "settings"=settings, 
                   "Lat_i"=Data_Geostat[,'Lat'], 
                   "Lon_i"=Data_Geostat[,'Lon'], 
@@ -75,7 +56,6 @@ fit <- fit_model( "settings"=settings,
                   "b_i"=Data_Geostat[,'Catch_KG'], 
                   "a_i"=Data_Geostat[,'AreaSwept'], 
                   "v_i"=Data_Geostat[,'Vessel'], 
-                  input_grid = user_region,
                   optimize_args=list("lower"=-Inf,"upper"=Inf),
                   "working_dir" =paste0(wkdir,"/"))
 # Plot results
