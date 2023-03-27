@@ -41,7 +41,7 @@ wc_input <- rbind(wc.combo, wc.tri) %>%
 
 ak.ll0 <- bind_rows(read.csv(here('data','catch_summary_view_with_nulls1979-1999.csv'), header=TRUE,skip = 6),
                             read.csv(here('data','catch_summary_view_with_nulls2000-2020.csv'), header=TRUE,skip = 6))
-ak.ll <- ak.ll0 %>%
+ak_ll <- ak.ll0 %>%
   filter(Year > 1989) %>%
   mutate(Catch2 = ifelse(is.na(Catch),0,Catch),
          Start.Longitude..DD. =  
@@ -59,11 +59,11 @@ ak.ll <- ak.ll0 %>%
          Lat , Lon , Pass = Haul)  %>%
   data.frame()
 
-saveRDS(ak.ll, file = here('data',paste0(Sys.Date(),'ak_LL.rds')))
-## DH indicated to use <700m and drop 1984, 1987 and split at 1993
+saveRDS(ak_ll, file = here('data',paste0(Sys.Date(),'ak_LL.rds')))
+## DH indicated to use <500m and drop 1984, 1987 and split at 1993
 ak.goa <- read.csv( here('data',"race_cpue_by_haul-011322.csv"), header=TRUE,skip = 7) %>% 
-  # filter( Gear.Depth <= 500 & !(Year %in% c(1984,1987)) ) %>%
-  filter( Gear.Depth <= 500  ) %>%
+  filter( Gear.Depth <= 500 & !(Year %in% c(1984,1987)) ) %>%
+  # filter( Gear.Depth <= 500  ) %>%
   mutate(Vessel = as.factor(Vessel.Number),
          Catch_KG = ifelse(is.na(Weight.CPUE..kg.km2.),0,Weight.CPUE..kg.km2.),
          Lon =    ifelse(  Starting.Longitude..dd. > 0,   Starting.Longitude..dd.*-1, Starting.Longitude..dd.),
@@ -80,6 +80,10 @@ ak_input <- rbind(ak.goa)
 
 inputVAST <- bind_rows(wc_input, ak_input)
 inputVAST$AreaSwept[is.na(inputVAST$AreaSwept)] <- 0.02 ## single row from AI_EARLY
+save(inputVAST, file = here('data',paste0(Sys.Date(),'inputVast.csv')))
+saveRDS(inputVAST, file = here('data',paste0(Sys.Date(),'inputVast.rds')))
+
+
 save(inputVAST, file = here('data',paste0(Sys.Date(),'inputVast.csv')))
 saveRDS(inputVAST, file = here('data',paste0(Sys.Date(),'inputVast.rds')))
 
